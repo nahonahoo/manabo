@@ -17,6 +17,10 @@
 
   <!-- ══ SETUP ══ -->
   <div id="setup-screen">
+    <div id="setup-loading" style="display:none;text-align:center;color:#b0a0cc;font-size:.88rem;padding:1rem">
+      まなぼのきおくをよみこんでるぼ…🔄
+    </div>
+    <div id="setup-form">
     <svg class="setup-pet" viewBox="0 0 160 160">
       <defs>
         <radialGradient id="sg" cx="50%" cy="42%" r="55%">
@@ -50,6 +54,7 @@
       ③ 無料枠で使えます（1日1500回まで）
     </p>
     <button class="btn-primary" onclick="startApp()">まなぼとはじめる</button>
+    </div><!-- /setup-form -->
   </div>
 
   <!-- ══ MAIN APP ══ -->
@@ -251,7 +256,7 @@
           <button class="filter-chip" onclick="setFilter('日常',this)">日常</button>
         </div>
         <div class="storage-bar-wrap">
-          <div class="storage-bar-lbl" id="storage-lbl">容量使用: 計算中…</div>
+          <div class="storage-bar-lbl" id="storage-lbl">Firebase同期済み ☁</div>
           <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
         </div>
         <div class="know-count" id="know-count"></div>

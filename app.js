@@ -31,52 +31,138 @@ const IDLE = [
 
 const LV_NAMES = ['まなぼ','ちびかしこ','まなぼ中級','わりとかしこ','けっこうかしこ','すごいかしこ','てんさい（自称）'];
 
+// ── FIREBASE CONFIG ──
+const FB_CONFIG = {
+  apiKey: "AIzaSyAuxIpIvr40PY6i1dmdE98EQ7IHxjSTisE",
+  authDomain: "manabo-nhnh.firebaseapp.com",
+  projectId: "manabo-nhnh",
+  storageBucket: "manabo-nhnh.firebasestorage.app",
+  messagingSenderId: "905685422285",
+  appId: "1:905685422285:web:a6d9f18f2053bb0f151984"
+};
+const FB_DOC = `https://firestore.googleapis.com/v1/projects/${FB_CONFIG.projectId}/databases/(default)/documents`;
+const MANABO_ID = 'shared'; // 家族全員で同じドキュメントを共有
+
 // ── STORAGE ──
-function saveState() {
-  // 知識だけ保存。chatHistoryは保存しない（容量節約）
-  const data = {
-    apiKey: S.apiKey,
-    level: S.level, xp: S.xp, xpMax: S.xpMax,
-    knowledge: S.knowledge,
-    monoCount: S.monoCount, monoDate: S.monoDate,
-  };
+// APIキーだけlocalStorageに保存（デバイスごと）
+// 知識・レベル・XPはFirestoreに保存（全デバイス共有）
+
+function saveApiKeyLocal(key) {
+  localStorage.setItem('manabo_api', key);
+}
+function loadApiKeyLocal() {
+  return localStorage.getItem('manabo_api') || '';
+}
+
+// Firestore REST API ヘルパー
+async function fsGet() {
+  const res = await fetch(`${FB_DOC}/manabo/${MANABO_ID}`);
+  if (res.status === 404) return null;
+  const data = await res.json();
+  return fsFromFields(data.fields || {});
+}
+
+async function fsSet(obj) {
+  const body = { fields: fsToFields(obj) };
+  await fetch(`${FB_DOC}/manabo/${MANABO_ID}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+// Firestore型変換（REST APIはフィールド型を明示する必要がある）
+function fsToFields(obj) {
+  const f = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'string')       f[k] = { stringValue: v };
+    else if (typeof v === 'number')  f[k] = { integerValue: String(v) };
+    else if (typeof v === 'boolean') f[k] = { booleanValue: v };
+    else if (Array.isArray(v))       f[k] = { stringValue: JSON.stringify(v) };
+    else if (v === null)             f[k] = { nullValue: null };
+  }
+  return f;
+}
+
+function fsFromFields(fields) {
+  const obj = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if ('stringValue'  in v) obj[k] = v.stringValue;
+    else if ('integerValue' in v) obj[k] = Number(v.integerValue);
+    else if ('booleanValue' in v) obj[k] = v.booleanValue;
+    else if ('nullValue'    in v) obj[k] = null;
+  }
+  return obj;
+}
+
+// 保存：Firestoreへ（非同期・失敗しても続行）
+async function saveState() {
   try {
-    localStorage.setItem('manabo', JSON.stringify(data));
+    await fsSet({
+      level:     S.level,
+      xp:        S.xp,
+      xpMax:     S.xpMax,
+      monoCount: S.monoCount,
+      monoDate:  S.monoDate,
+      knowledge: JSON.stringify(S.knowledge),
+    });
   } catch(e) {
-    showToast('⚠ 保存容量が足りないかも。古い記憶を整理してね。');
+    console.warn('Firestore save error:', e);
+    // フォールバック：localStorageにも保存
+    try { localStorage.setItem('manabo_backup', JSON.stringify({ level:S.level, xp:S.xp, xpMax:S.xpMax, knowledge:S.knowledge })); } catch(_){}
   }
 }
 
-function loadState() {
+// 読み込み：Firestoreから
+async function loadState() {
+  S.apiKey = loadApiKeyLocal();
   try {
-    const raw = localStorage.getItem('manabo');
-    if (!raw) return;
-    const d = JSON.parse(raw);
-    S.apiKey   = d.apiKey   || '';
-    S.level    = d.level    || 1;
-    S.xp       = d.xp       || 0;
-    S.xpMax    = d.xpMax    || 5;
-    S.knowledge = (d.knowledge || []).map(k => ({
-      id: k.id || crypto.randomUUID(),
-      subject: k.subject || '日常',
-      topic: k.topic || '',
-      summary: k.summary || '',
-      misunderstanding: k.misunderstanding || '',
-      createdAt: k.createdAt || Date.now(),
-    }));
-    S.monoCount = d.monoCount || 0;
-    S.monoDate  = d.monoDate  || '';
-  } catch(e) { console.warn('load error', e); }
+    const d = await fsGet();
+    if (d) {
+      S.level    = d.level    || 1;
+      S.xp       = d.xp       || 0;
+      S.xpMax    = d.xpMax    || 5;
+      S.monoCount = d.monoCount || 0;
+      S.monoDate  = d.monoDate  || '';
+      S.knowledge = d.knowledge
+        ? JSON.parse(d.knowledge).map(k => ({
+            id: k.id || crypto.randomUUID(),
+            subject: k.subject || '日常',
+            topic: k.topic || '',
+            summary: k.summary || '',
+            misunderstanding: k.misunderstanding || '',
+            createdAt: k.createdAt || Date.now(),
+            secret: k.secret || false,
+          }))
+        : [];
+    }
+  } catch(e) {
+    console.warn('Firestore load error:', e);
+    // フォールバック：localStorageから復元
+    try {
+      const bk = localStorage.getItem('manabo_backup');
+      if (bk) { const d = JSON.parse(bk); S.level=d.level||1; S.xp=d.xp||0; S.xpMax=d.xpMax||5; S.knowledge=d.knowledge||[]; }
+    } catch(_){}
+  }
 }
 
 function getStorageUsage() {
-  const used = new Blob([localStorage.getItem('manabo') || '']).size;
-  return { used, max: 4 * 1024 * 1024, pct: Math.round(used / (4*1024*1024) * 100) };
+  const bytes = new Blob([JSON.stringify(S.knowledge)]).size;
+  return { used: bytes, max: 1024*1024, pct: Math.round(bytes/10240) };
 }
 
 // ── INIT ──
-window.addEventListener('load', () => {
-  loadState();
+window.addEventListener('load', async () => {
+  // ローディング表示
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('setup-loading').style.display = '';
+  document.getElementById('setup-form').style.display = 'none';
+
+  await loadState();
+
+  document.getElementById('setup-loading').style.display = 'none';
+  document.getElementById('setup-form').style.display = '';
+
   if (S.apiKey) {
     showMain();
   } else {
@@ -84,14 +170,15 @@ window.addEventListener('load', () => {
   }
 });
 
-function startApp() {
+async function startApp() {
   const key = document.getElementById('api-key-input').value.trim();
   if (!key || key.length < 10) {
     alert('APIキーを入力してね');
     return;
   }
   S.apiKey = key;
-  saveState();
+  saveApiKeyLocal(key);
+  await saveState();
   showMain();
 }
 
@@ -618,12 +705,12 @@ function setFilter(sub, btn) {
   renderKnowledge();
 }
 
-function deleteKnowledge(id) {
+async function deleteKnowledge(id) {
   const item = S.knowledge.find(k => k.id === id);
   if (!item) return;
   if (!confirm(`「${item.topic}」の記憶を消しますか？`)) return;
   S.knowledge = S.knowledge.filter(k => k.id !== id);
-  saveState();
+  await saveState();
   renderKnowledge();
   typeText('あれ…なんかわすれた…（ぽかん）');
 }
@@ -644,13 +731,13 @@ function closeEdit() {
   document.getElementById('edit-bg').classList.remove('show');
 }
 
-function saveEdit() {
+async function saveEdit() {
   const item = S.knowledge.find(k => k.id === S.editingId);
   if (!item) return;
   item.topic = document.getElementById('edit-topic').value.trim() || item.topic;
   item.summary = document.getElementById('edit-summary').value.trim() || item.summary;
   item.misunderstanding = document.getElementById('edit-mis').value.trim();
-  saveState();
+  await saveState();
   renderKnowledge();
   closeEdit();
   typeText('なおした！（よくわかってない）');
@@ -708,7 +795,7 @@ D: 複数の知識を意外な形で結びつける
     addChatMsg('manabo', msg);
     S.chatHistory.push({ role: 'model', parts: [{ text: msg }] });
     S.monoCount++;
-    saveState();
+    await saveState();
   } catch {
     showToast(IDLE[Math.floor(Math.random() * IDLE.length)]);
   }
@@ -738,18 +825,18 @@ function saveApiKey() {
   const k = document.getElementById('d-api').value.trim();
   if (!k) return;
   S.apiKey = k;
-  saveState();
+  saveApiKeyLocal(k);
   closeDrawer();
   typeText('APIキー…ほぞんした！（意味わかってない）');
 }
 
-function resetAll() {
+async function resetAll() {
   if (!confirm('まなぼの記憶と会話を全部消しますか？')) return;
   S.knowledge = [];
   S.level = 1; S.xp = 0; S.xpMax = 5;
   S.chatHistory = [];
   S.monoCount = 0;
-  saveState();
+  await saveState();
   updateHeader();
   renderKnowledge();
   document.getElementById('chat-msgs').innerHTML = '';
@@ -780,7 +867,7 @@ function closeParentMode() {
   document.getElementById('p-subject').value = '理科';
 }
 
-function addParentKnowledge() {
+async function addParentKnowledge() {
   const topic   = document.getElementById('p-topic').value.trim();
   const summary = document.getElementById('p-summary').value.trim();
   const mis     = document.getElementById('p-mis').value.trim();
@@ -797,7 +884,7 @@ function addParentKnowledge() {
     secret: true, // 親が仕込んだフラグ
   });
   gainXP(1);
-  saveState();
+  await saveState();
   renderKnowledge();
   renderParentList();
 
@@ -808,9 +895,9 @@ function addParentKnowledge() {
   setTimeout(() => { document.getElementById('p-result').textContent = ''; }, 2000);
 }
 
-function deleteParentKnowledge(id) {
+async function deleteParentKnowledge(id) {
   S.knowledge = S.knowledge.filter(k => k.id !== id);
-  saveState();
+  await saveState();
   renderKnowledge();
   renderParentList();
 }
