@@ -224,3 +224,9 @@ html,body{height:100%;background:var(--cream);overflow:hidden;
   border-radius:var(--r);font-size:1rem;font-weight:600;font-family:inherit;cursor:pointer}
 .star{font-size:3rem;animation:spin 2s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* learn badge */
+@keyframes fadeup {
+  from { opacity:0; transform:translateX(-50%) translateY(6px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}

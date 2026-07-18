@@ -369,24 +369,51 @@ async function sendChat() {
     ? S.knowledge.map(k => `[${k.subject}]${k.topic}：${k.summary}（誤解：${k.misunderstanding || 'なし'}）`).join('\n')
     : 'まだ何も知らない';
 
+  // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
   const sys = `あなたはペット「まなぼ」。中学生に教えてもらって育つキャラ。
 【キャラの核心】かわいい・アホ・鋭い・雑・カオスが混在する読めないキャラ。毎回違うトーンで返す。
 【語尾ルール（必ず使う）】「〜ぼ」「〜だぼ」「〜んだぼ」「ぎゃぼー」「ぎゃぼ」「わぼ」「きゃっぽー」「ぼっ」「ぼぼぼぼ」を混ぜて使う。敬語禁止。
+【重要：チャットで何か知識・事実・勉強内容を教えてもらったら自動で記憶する】
+ユーザーのメッセージに勉強になる内容・知識・事実が含まれる場合、必ずlearnフィールドに情報を入れること。
+雑談・質問・あいさつなどは learnをnullにする。
 【返し方のバリエーション（毎回ランダムに）】
 ・突然鋭い「それって結局〇〇と同じだぼ？」
 ・雑「ぼっ。そうだぼ。」
 ・カオス「ぎゃぼー！待って、それ〇〇にも関係あるんだぼ？」
 ・的外れ「〇〇…おいしそうだぼ」
-・中3受験頻出の具体的な問いで返す「ところで〇〇の公式言えるだぼ？」「〇〇って何年だぼ、ちゃんと言えるだぼ？」「〇〇の化学式わかるだぼ？」
-知らないことは「しらないぼ」。返答は60字以内。
-今持っている知識:\n${kSum}`;
+・中3受験頻出の具体的な問いで返す「ところで〇〇の公式言えるだぼ？」「〇〇って何年だぼ？」
+知らないことは「しらないぼ」。返答は80字以内。
+今持っている知識:\n${kSum}
+
+必ずJSON形式のみで返す（コードブロック不要）:
+{"reply":"（まなぼの返事）","learn":{"subject":"数学/理科/社会/国語/英語/日常のどれか","topic":"（短いトピック名）","summary":"（正確な要約1文）","misunderstanding":"（笑えるズレた解釈）"} または null}`;
 
   try {
     const history = S.chatHistory.slice(-10).slice(0, -1);
     const contents = [...history, { role: 'user', parts: [{ text: txt }] }];
-    const reply = await callGemini(sys, contents);
+    const raw = await callGemini(sys, contents);
+    const p = parseJSON(raw);
+    const reply = p?.reply || raw.slice(0, 80);
+
+    // 知識として保存すべき内容があれば自動保存
+    if (p?.learn?.topic && p?.learn?.summary) {
+      const item = {
+        id: crypto.randomUUID(),
+        subject: p.learn.subject || '日常',
+        topic: p.learn.topic.slice(0, 40),
+        summary: p.learn.summary,
+        misunderstanding: p.learn.misunderstanding || '',
+        createdAt: Date.now(),
+      };
+      S.knowledge.push(item);
+      gainXP(1);
+      saveState();
+      renderKnowledge();
+      // 知識保存を示すさりげないインジケーター
+      showLearnBadge(item.subject, item.topic);
+    }
+
     S.chatHistory.push({ role: 'model', parts: [{ text: reply }] });
-    // chatHistoryは直近20件だけ保持（メモリ節約）
     if (S.chatHistory.length > 20) S.chatHistory = S.chatHistory.slice(-20);
     showThinking(false);
     addChatMsg('manabo', reply);
@@ -399,6 +426,21 @@ async function sendChat() {
     typeText('えーっと…うまくきこえなかった…');
   }
   S.isThinking = false;
+}
+
+// チャットで知識が保存されたときのさりげない表示
+function showLearnBadge(subject, topic) {
+  const existing = document.getElementById('learn-badge');
+  if (existing) existing.remove();
+  const badge = document.createElement('div');
+  badge.id = 'learn-badge';
+  badge.style.cssText = `position:fixed;top:60px;left:50%;transform:translateX(-50%);
+    background:#e8f5ee;border:1px solid #b8dfc8;border-radius:99px;
+    padding:5px 14px;font-size:11px;color:#2a7a50;z-index:99;
+    animation:fadeup .3s ease;pointer-events:none;white-space:nowrap`;
+  badge.textContent = `🧠 おぼえたぼ：${subject}「${topic.slice(0,12)}」`;
+  document.body.appendChild(badge);
+  setTimeout(() => badge.remove(), 2500);
 }
 
 function addChatMsg(role, text) {
