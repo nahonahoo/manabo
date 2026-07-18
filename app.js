@@ -1,4 +1,6 @@
 // ── STATE ──
+const DEFAULT_GOBI = ['〜ぼ','〜だぼ','〜んだぼ','ぎゃぼー','ぎゃぼ','わぼ','きゃっぽー','ぼっ','ぼぼぼぼ'];
+
 const S = {
   apiKey: '',
   level: 1, xp: 0, xpMax: 5,
@@ -10,7 +12,15 @@ const S = {
   monoDate: '',
   filterSubject: 'すべて',
   editingId: null,
+  gobi: [...DEFAULT_GOBI], // カスタマイズ可能な語尾リスト
+  petName: 'まなぼ',       // ペットの名前
+  persona: '',             // 性格メモ
 };
+
+// 語尾リストをプロンプト用文字列に変換
+function gobiStr() {
+  return S.gobi.map(g => `「${g}」`).join('');
+}
 
 const IDLE = [
   'ぽわわ…むにゃ…だぼ…',
@@ -71,6 +81,9 @@ async function saveState() {
       monoCount: S.monoCount,
       monoDate:  S.monoDate,
       knowledge: JSON.stringify(S.knowledge),
+      gobi:      JSON.stringify(S.gobi),
+      petName:   S.petName,
+      persona:   S.persona,
     });
   } catch(e) {
     console.warn('Firestore save error:', e);
@@ -105,6 +118,9 @@ async function loadState() {
             secret:           k.secret || false,
           }))
         : [];
+      S.gobi    = d.gobi    ? JSON.parse(d.gobi) : [...DEFAULT_GOBI];
+      S.petName = d.petName || 'まなぼ';
+      S.persona = d.persona || '';
     }
   } catch(e) {
     console.warn('Firestore load error:', e);
@@ -430,9 +446,9 @@ async function sendChat() {
     : 'まだ何も知らない';
 
   // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
-  const sys = `あなたはペット「まなぼ」。中学生に教えてもらって育つキャラ。
+  const sys = `あなたはペット「${S.petName}」。中学生に教えてもらって育つキャラ。${S.persona ? `【性格メモ：${S.persona}】` : ''}
 【キャラの核心】かわいい・アホ・鋭い・雑・カオスが混在する読めないキャラ。毎回違うトーンで返す。
-【語尾ルール（必ず使う）】「〜ぼ」「〜だぼ」「〜んだぼ」「ぎゃぼー」「ぎゃぼ」「わぼ」「きゃっぽー」「ぼっ」「ぼぼぼぼ」を混ぜて使う。敬語禁止。
+【語尾ルール（必ず使う）】${gobiStr()} を混ぜて使う。敬語禁止。
 【重要：チャットで何か知識・事実・勉強内容を教えてもらったら自動で記憶する】
 ユーザーのメッセージに勉強になる内容・知識・事実が含まれる場合、必ずlearnフィールドに情報を入れること。
 雑談・質問・あいさつなどは learnをnullにする。
@@ -539,9 +555,9 @@ async function teachManabo() {
   doThinkShake();
   bounce();
 
-  const sys = `ペット「まなぼ」として教えてもらった内容に反応する。
+  const sys = `ペット「${S.petName}」として教えてもらった内容に反応する。${S.persona ? `【性格メモ：${S.persona}】` : ''}
 【キャラ】かわいい・アホ・鋭い・雑・カオスが混在する読めないキャラ。
-【語尾】「〜ぼ」「〜だぼ」「ぎゃぼー」「ぎゃぼ」「わぼ」「きゃっぽー」「ぼっ」を混ぜる。敬語禁止。
+【語尾】${gobiStr()} を混ぜる。敬語禁止。
 JSON形式のみ（コードブロック不要）:
 {"reaction":"（毎回違うトーンの反応25字以内。かわいい/鋭い/雑/カオスをランダムに）","summary":"（正確な要約1文）","misunderstanding":"（笑えるズレた解釈25字以内）","question":"（教えてもらった内容に関連した中3受験頻出の具体的な問いを20字以内で。答えが明確に存在するものを選ぶ。ぼ語尾で。例：「〇〇の化学式はなんだぼ？」「〇〇は何年だぼ？」「〇〇の公式言えるだぼ？」）"}`;
 
@@ -600,10 +616,10 @@ async function generateDiary(type) {
   const topics = picks.map(k => `[${k.subject}]${k.topic}：${k.summary}（誤解：${k.misunderstanding || 'なし'}）`).join('\n');
 
   const prompts = {
-    日記: `ペット「まなぼ」として今日の日記を書く。かわいい/アホ/突然鋭い/雑/カオスが混在する読めないキャラで。覚えた知識をズレた形・意外なつながりで混ぜる。300字以内。語尾は「〜ぼ」「ぎゃぼー」「わぼ」「きゃっぽー」「ぼっ」をランダムに。敬語禁止。`,
-    小説: `ペット「まなぼ」として短編小説を書く。かわいい/鋭い/雑/カオスが混在するキャラで語る。知識を的外れかつ時々妙に鋭く登場させる。400字以内。語尾は「〜ぼ」「ぎゃぼー」「わぼ」「ぼっ」をランダムに。敬語禁止。`,
-    発表: `ペット「まなぼ」として授業発表。「えーっと」「ぎゃぼ待って」「わぼ…」などを挟みながら、一生懸命だがカオスな発表を300字以内で。語尾は「〜ぼ」「ぎゃぼー」「きゃっぽー」をランダムに。敬語禁止。`,
-    詩: `ペット「まなぼ」として詩を書く。かわいい/鋭い/カオスが混在する詩。知識が意外な比喩になる。200字以内。語尾は「〜ぼ」「ぎゃぼー」「わぼ」をランダムに。敬語禁止。`,
+    日記: `ペット「まなぼ」として今日の日記を書く。かわいい/アホ/突然鋭い/雑/カオスが混在する読めないキャラで。覚えた知識をズレた形・意外なつながりで混ぜる。300字以内。語尾は${gobiStr()}をランダムに。敬語禁止。`,
+    小説: `ペット「まなぼ」として短編小説を書く。かわいい/鋭い/雑/カオスが混在するキャラで語る。知識を的外れかつ時々妙に鋭く登場させる。400字以内。語尾は${gobiStr()}をランダムに。敬語禁止。`,
+    発表: `ペット「まなぼ」として授業発表。「えーっと」「ぎゃぼ待って」「わぼ…」などを挟みながら、一生懸命だがカオスな発表を300字以内で。語尾は${gobiStr()}をランダムに。敬語禁止。`,
+    詩: `ペット「まなぼ」として詩を書く。かわいい/鋭い/カオスが混在する詩。知識が意外な比喩になる。200字以内。語尾は${gobiStr()}をランダムに。敬語禁止。`,
   };
 
   const sys = (prompts[type] || prompts['日記']) + `\n知識:\n${topics}\nプレーンテキストのみ（JSON・装飾なし）。`;
@@ -746,9 +762,9 @@ async function doMono() {
   const picks = [...S.knowledge].sort(() => Math.random() - .5).slice(0, Math.min(3, S.knowledge.length));
   const info = picks.map(k => `${k.topic}（${k.misunderstanding || k.summary}）`).join('、');
 
-  const sys = `ペット「まなぼ」として独り言をつぶやく。
+  const sys = `ペット「${S.petName}」として独り言をつぶやく。${S.persona ? `【性格メモ：${S.persona}】` : ''}
 【キャラ】かわいい・アホ・突然鋭い・雑・カオスが混在する読めないキャラ。毎回違うトーンで。
-【語尾】「〜ぼ」「〜だぼ」「ぎゃぼー」「ぎゃぼ」「わぼ」「きゃっぽー」「ぼっ」をランダムに。敬語禁止。
+【語尾】${gobiStr()} をランダムに。敬語禁止。
 【内容パターン（毎回ランダムに1つ選ぶ）】
 A: 覚えた知識をズレた形でつぶやく
 B: 雑に一言「ぼっ。」だけ
@@ -892,4 +908,80 @@ function renderParentList() {
       <button onclick="deleteParentKnowledge('${k.id}')"
         style="flex-shrink:0;padding:3px 9px;border-radius:99px;border:1px solid #f0b0b0;background:#fde8e8;color:#c03030;font-size:.72rem;cursor:pointer;font-family:inherit">消す</button>
     </div>`).join('');
+}
+
+// ── パーソナライズ ──
+function openPersonalize() {
+  closeDrawer();
+  document.getElementById('p13-name').value = S.petName;
+  document.getElementById('p13-persona').value = S.persona;
+  renderGobiList();
+  document.getElementById('personalize-modal').style.display = 'flex';
+}
+
+function closePersonalize() {
+  document.getElementById('personalize-modal').style.display = 'none';
+}
+
+// 旧関数はエイリアスとして残す（モーダルIDだけ変わった）
+function openGobiEditor() { openPersonalize(); }
+function closeGobiEditor() { closePersonalize(); }
+
+function savePetName() {
+  const name = document.getElementById('p13-name').value.trim();
+  if (!name) return;
+  S.petName = name;
+  saveState();
+  showResult('p13-result', `「${name}」に変えたぼ！`);
+  typeText(`あたらしいなまえ…「${name}」…かっこいいぼ！`);
+  bounce();
+}
+
+function savePersona() {
+  S.persona = document.getElementById('p13-persona').value.trim();
+  saveState();
+  showResult('p13-result', '性格メモを保存したぼ！');
+  typeText('きゃっぽー！なんかかわったぼ？');
+  bounce();
+}
+
+function showResult(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; }, 2500);
+}
+
+function renderGobiList() {
+  const el = document.getElementById('gobi-list');
+  el.innerHTML = S.gobi.map((g, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:#fdf8f0;border:1px solid #e8ddf5;border-radius:10px;padding:7px 11px">
+      <span style="flex:1;font-size:.88rem;color:#2d2040;font-weight:500">${esc(g)}</span>
+      <button onclick="deleteGobi(${i})"
+        style="padding:3px 9px;border-radius:99px;border:1px solid #f0b0b0;background:#fde8e8;color:#c03030;font-size:.72rem;cursor:pointer;font-family:inherit">消す</button>
+    </div>`).join('');
+}
+
+function addGobi() {
+  const inp = document.getElementById('gobi-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (S.gobi.includes(val)) { alert('もう入ってるぼ'); return; }
+  S.gobi.push(val);
+  inp.value = '';
+  saveState();
+  renderGobiList();
+}
+
+function deleteGobi(i) {
+  if (S.gobi.length <= 1) { alert('語尾は1個以上必要だぼ'); return; }
+  S.gobi.splice(i, 1);
+  saveState();
+  renderGobiList();
+}
+
+function resetGobi() {
+  if (!confirm('語尾をデフォルトに戻す？')) return;
+  S.gobi = [...DEFAULT_GOBI];
+  saveState();
+  renderGobiList();
 }

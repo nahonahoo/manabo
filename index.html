@@ -311,6 +311,10 @@
     <button class="d-btn" onclick="openParentMode()">こっそり追加する</button>
   </div>
   <div class="d-sec">
+    <div class="d-lbl">🐾 まなぼのパーソナライズ</div>
+    <button class="d-btn" onclick="openPersonalize()">まなぼをカスタマイズする</button>
+  </div>
+  <div class="d-sec">
     <div class="d-lbl">データをリセット</div>
     <button class="d-btn danger" onclick="resetAll()">記憶・会話を全消去</button>
   </div>
@@ -343,9 +347,56 @@
 </div>
 
 
+
+<!-- パーソナライズモーダル -->
+<div id="personalize-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:14px;max-height:88vh;overflow-y:auto">
+
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🐾 まなぼをカスタマイズ</h3>
+      <button onclick="closePersonalize()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+
+    <!-- まなぼの名前 -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの名前</div>
+      <div style="display:flex;gap:8px">
+        <input id="p13-name" type="text" placeholder="まなぼ"
+          style="flex:1;padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+        <button onclick="savePetName()" style="padding:9px 14px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">変更</button>
+      </div>
+    </div>
+
+    <!-- 語尾エディタ -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの語尾</div>
+      <p style="font-size:.75rem;color:#b0a0cc;line-height:1.6">語尾を自由に追加・削除できます。AIの返答に反映されます。</p>
+      <div style="display:flex;gap:8px">
+        <input id="gobi-input" type="text" placeholder="例：〜にゃ　ぴょん　だぴ"
+          onkeydown="if(event.key==='Enter')addGobi()"
+          style="flex:1;padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+        <button onclick="addGobi()" style="padding:9px 14px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.875rem;font-weight:600;font-family:inherit;cursor:pointer">追加</button>
+      </div>
+      <div id="gobi-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button onclick="resetGobi()" style="padding:8px;background:#f5eedd;color:#7a6a9a;border:1px solid #e8ddf5;border-radius:10px;font-size:.78rem;font-family:inherit;cursor:pointer">語尾をデフォルトに戻す</button>
+    </div>
+
+    <!-- まなぼへのひとこと -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼへのひとこと（性格メモ）</div>
+      <p style="font-size:.75rem;color:#b0a0cc;line-height:1.6">まなぼに伝えたい「きみはこんなキャラだぼ」をひとことで。AIの返答のトーンに影響します。</p>
+      <textarea id="p13-persona" rows="3" placeholder="例：ちょっとおっちょこちょいで、でも一生懸命な子。関西弁も混じる。"
+        style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.82rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none;resize:none;line-height:1.6"></textarea>
+      <button onclick="savePersona()" style="padding:9px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:600;font-family:inherit;cursor:pointer">保存する</button>
+    </div>
+
+    <div id="p13-result" style="font-size:.82rem;color:#4caf7d;text-align:center;min-height:1.2em"></div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>
