@@ -31,7 +31,10 @@ const IDLE = [
 
 const LV_NAMES = ['まなぼ','ちびかしこ','まなぼ中級','わりとかしこ','けっこうかしこ','すごいかしこ','てんさい（自称）'];
 
-// ── FIREBASE CONFIG ──
+// ── FIREBASE SDK (CDN) ──
+// SDKはindex.htmlで読み込み済み
+// firebase/app と firebase/firestore をグローバル変数経由で使う
+
 const FB_CONFIG = {
   apiKey: "AIzaSyAuxIpIvr40PY6i1dmdE98EQ7IHxjSTisE",
   authDomain: "manabo-nhnh.firebaseapp.com",
@@ -40,13 +43,17 @@ const FB_CONFIG = {
   messagingSenderId: "905685422285",
   appId: "1:905685422285:web:a6d9f18f2053bb0f151984"
 };
-const FB_DOC = `https://firestore.googleapis.com/v1/projects/${FB_CONFIG.projectId}/databases/(default)/documents`;
-const MANABO_ID = 'shared'; // 家族全員で同じドキュメントを共有
+const MANABO_ID = 'shared';
+
+let _db = null;
+function getDB() {
+  if (_db) return _db;
+  const app = firebase.initializeApp(FB_CONFIG);
+  _db = firebase.firestore(app);
+  return _db;
+}
 
 // ── STORAGE ──
-// APIキーだけlocalStorageに保存（デバイスごと）
-// 知識・レベル・XPはFirestoreに保存（全デバイス共有）
-
 function saveApiKeyLocal(key) {
   localStorage.setItem('manabo_api', key);
 }
@@ -54,51 +61,10 @@ function loadApiKeyLocal() {
   return localStorage.getItem('manabo_api') || '';
 }
 
-// Firestore REST API ヘルパー
-async function fsGet() {
-  const res = await fetch(`${FB_DOC}/manabo/${MANABO_ID}`);
-  if (res.status === 404) return null;
-  const data = await res.json();
-  return fsFromFields(data.fields || {});
-}
-
-async function fsSet(obj) {
-  const body = { fields: fsToFields(obj) };
-  await fetch(`${FB_DOC}/manabo/${MANABO_ID}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
-
-// Firestore型変換（REST APIはフィールド型を明示する必要がある）
-function fsToFields(obj) {
-  const f = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === 'string')       f[k] = { stringValue: v };
-    else if (typeof v === 'number')  f[k] = { integerValue: String(v) };
-    else if (typeof v === 'boolean') f[k] = { booleanValue: v };
-    else if (Array.isArray(v))       f[k] = { stringValue: JSON.stringify(v) };
-    else if (v === null)             f[k] = { nullValue: null };
-  }
-  return f;
-}
-
-function fsFromFields(fields) {
-  const obj = {};
-  for (const [k, v] of Object.entries(fields)) {
-    if ('stringValue'  in v) obj[k] = v.stringValue;
-    else if ('integerValue' in v) obj[k] = Number(v.integerValue);
-    else if ('booleanValue' in v) obj[k] = v.booleanValue;
-    else if ('nullValue'    in v) obj[k] = null;
-  }
-  return obj;
-}
-
-// 保存：Firestoreへ（非同期・失敗しても続行）
 async function saveState() {
   try {
-    await fsSet({
+    const db = getDB();
+    await db.collection('manabo').doc(MANABO_ID).set({
       level:     S.level,
       xp:        S.xp,
       xpMax:     S.xpMax,
@@ -108,47 +74,54 @@ async function saveState() {
     });
   } catch(e) {
     console.warn('Firestore save error:', e);
-    // フォールバック：localStorageにも保存
-    try { localStorage.setItem('manabo_backup', JSON.stringify({ level:S.level, xp:S.xp, xpMax:S.xpMax, knowledge:S.knowledge })); } catch(_){}
+    try {
+      localStorage.setItem('manabo_backup', JSON.stringify({
+        level: S.level, xp: S.xp, xpMax: S.xpMax, knowledge: S.knowledge
+      }));
+    } catch(_) {}
   }
 }
 
-// 読み込み：Firestoreから
 async function loadState() {
   S.apiKey = loadApiKeyLocal();
   try {
-    const d = await fsGet();
-    if (d) {
-      S.level    = d.level    || 1;
-      S.xp       = d.xp       || 0;
-      S.xpMax    = d.xpMax    || 5;
+    const db = getDB();
+    const snap = await db.collection('manabo').doc(MANABO_ID).get();
+    if (snap.exists) {
+      const d = snap.data();
+      S.level     = d.level     || 1;
+      S.xp        = d.xp        || 0;
+      S.xpMax     = d.xpMax     || 5;
       S.monoCount = d.monoCount || 0;
       S.monoDate  = d.monoDate  || '';
       S.knowledge = d.knowledge
         ? JSON.parse(d.knowledge).map(k => ({
-            id: k.id || crypto.randomUUID(),
-            subject: k.subject || '日常',
-            topic: k.topic || '',
-            summary: k.summary || '',
+            id:               k.id || crypto.randomUUID(),
+            subject:          k.subject || '日常',
+            topic:            k.topic || '',
+            summary:          k.summary || '',
             misunderstanding: k.misunderstanding || '',
-            createdAt: k.createdAt || Date.now(),
-            secret: k.secret || false,
+            createdAt:        k.createdAt || Date.now(),
+            secret:           k.secret || false,
           }))
         : [];
     }
   } catch(e) {
     console.warn('Firestore load error:', e);
-    // フォールバック：localStorageから復元
     try {
       const bk = localStorage.getItem('manabo_backup');
-      if (bk) { const d = JSON.parse(bk); S.level=d.level||1; S.xp=d.xp||0; S.xpMax=d.xpMax||5; S.knowledge=d.knowledge||[]; }
-    } catch(_){}
+      if (bk) {
+        const d = JSON.parse(bk);
+        S.level = d.level || 1; S.xp = d.xp || 0;
+        S.xpMax = d.xpMax || 5; S.knowledge = d.knowledge || [];
+      }
+    } catch(_) {}
   }
 }
 
 function getStorageUsage() {
   const bytes = new Blob([JSON.stringify(S.knowledge)]).size;
-  return { used: bytes, max: 1024*1024, pct: Math.round(bytes/10240) };
+  return { used: bytes, max: 1024 * 1024, pct: Math.round(bytes / 10240) };
 }
 
 // ── INIT ──
