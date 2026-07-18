@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="まなぼ">
+<title>まなぼ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ SETUP ══ -->
+  <div id="setup-screen">
+    <svg class="setup-pet" viewBox="0 0 160 160">
+      <defs>
+        <radialGradient id="sg" cx="50%" cy="42%" r="55%">
+          <stop offset="0%" stop-color="#ede0ff"/>
+          <stop offset="100%" stop-color="#c5aaf0"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="80" cy="148" rx="30" ry="6" fill="#c8b0e8" opacity="0.3"/>
+      <ellipse cx="80" cy="98" rx="44" ry="46" fill="url(#sg)"/>
+      <ellipse cx="48" cy="62" rx="13" ry="16" fill="#daccf7" transform="rotate(-15,48,62)"/>
+      <ellipse cx="50" cy="63" rx="6" ry="9"  fill="#f9c6e2" transform="rotate(-15,50,63)"/>
+      <ellipse cx="112" cy="62" rx="13" ry="16" fill="#daccf7" transform="rotate(15,112,62)"/>
+      <ellipse cx="110" cy="63" rx="6" ry="9"  fill="#f9c6e2" transform="rotate(15,110,63)"/>
+      <ellipse cx="80" cy="94" rx="36" ry="34" fill="#ede0ff"/>
+      <ellipse cx="67" cy="85" rx="5" ry="5.5" fill="#3a2e4a"/>
+      <circle  cx="69" cy="83.5" r="1.4" fill="white"/>
+      <ellipse cx="93" cy="85" rx="5" ry="5.5" fill="#3a2e4a"/>
+      <circle  cx="95" cy="83.5" r="1.4" fill="white"/>
+      <ellipse cx="80" cy="93" rx="2.2" ry="1.8" fill="#b09ad4"/>
+      <path d="M75 97 Q80 102 85 97" stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="60" cy="97" rx="10" ry="6.5" fill="#f9b8c8" opacity="0.5"/>
+      <ellipse cx="100" cy="97" rx="10" ry="6.5" fill="#f9b8c8" opacity="0.5"/>
+    </svg>
+    <h1>まなぼ</h1>
+    <p>おしえると育つ、ちょっとズレたペットです。<br>Gemini APIキーを入力してはじめましょう。</p>
+    <input class="field" id="api-key-input" type="password"
+           placeholder="APIキーを貼り付け" autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <p class="hint">
+      ① <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> でGoogleアカウントでログイン<br>
+      ② 「APIキーを作成」→ コピーして上に貼り付け<br>
+      ③ 無料枠で使えます（1日1500回まで）
+    </p>
+    <button class="btn-primary" onclick="startApp()">まなぼとはじめる</button>
+  </div>
+
+  <!-- ══ MAIN APP ══ -->
+  <div id="main-app" style="display:none">
+
+    <!-- HEADER -->
+    <div id="header">
+      <div class="lv-badge">Lv.<span id="lv-num">1</span></div>
+      <div class="xp-wrap">
+        <div class="xp-lbl">おぼえてること <span id="xp-num">0</span>/<span id="xp-max">5</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      </div>
+      <button class="icon-btn" onclick="openDrawer()">☰</button>
+    </div>
+
+    <!-- PET -->
+    <div id="pet-area">
+      <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible">
+        <defs>
+          <radialGradient id="mg" cx="50%" cy="42%" r="55%">
+            <stop offset="0%" stop-color="#ede0ff"/>
+            <stop offset="100%" stop-color="#c5aaf0"/>
+          </radialGradient>
+          <radialGradient id="blush" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f9b8c8" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#f9b8c8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- 全体を包むグループ（ジャンプ・震え用） -->
+        <g id="pet-root">
+
+          <!-- 影（ジャンプで縮む） -->
+          <ellipse id="shadow-e" cx="80" cy="125" rx="28" ry="5" fill="#c8b0e8" opacity="0.25"/>
+
+          <!-- 左手（パタパタ用） -->
+          <ellipse id="arm-l" cx="36" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(-30,36,95)"/>
+          <!-- 右手（パタパタ用） -->
+          <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(30,124,95)"/>
+
+          <!-- 体 -->
+          <ellipse cx="80" cy="85" rx="44" ry="42" fill="url(#mg)"/>
+
+          <!-- 耳 -->
+          <ellipse cx="48"  cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(-15,48,53)"/>
+          <ellipse cx="50"  cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(-15,50,54)"/>
+          <ellipse cx="112" cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(15,112,53)"/>
+          <ellipse cx="110" cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(15,110,54)"/>
+
+          <!-- 顔ベース -->
+          <ellipse cx="80" cy="82" rx="35" ry="32" fill="#ede0ff"/>
+
+          <!-- 目（通常） -->
+          <g id="eyes-g">
+            <ellipse cx="67" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
+            <circle  cx="69" cy="73.5" r="1.4" fill="white"/>
+            <ellipse cx="93" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
+            <circle  cx="95" cy="73.5" r="1.4" fill="white"/>
+          </g>
+
+          <!-- まばたき -->
+          <g id="blink-g" style="display:none">
+            <rect x="62" y="74" width="10" height="3" rx="1.5" fill="#3a2e4a"/>
+            <rect x="88" y="74" width="10" height="3" rx="1.5" fill="#3a2e4a"/>
+          </g>
+
+          <!-- びっくり目 -->
+          <g id="surprise-g" style="display:none">
+            <ellipse cx="67" cy="75" rx="6" ry="7" fill="#3a2e4a"/>
+            <circle  cx="69" cy="73" r="1.8" fill="white"/>
+            <ellipse cx="93" cy="75" rx="6" ry="7" fill="#3a2e4a"/>
+            <circle  cx="95" cy="73" r="1.8" fill="white"/>
+          </g>
+
+          <!-- 細目（うれしい） -->
+          <g id="happy-eye-g" style="display:none">
+            <path d="M62 75 Q67 70 72 75" stroke="#3a2e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M88 75 Q93 70 98 75" stroke="#3a2e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- 鼻 -->
+          <ellipse cx="80" cy="83" rx="2.2" ry="1.8" fill="#b09ad4"/>
+
+          <!-- 口（ぱくぱく2状態） -->
+          <!-- 閉じ気味（小さく横幅絞る） -->
+          <path id="mouth-p" d="M77 87 Q80 91 83 87"
+                stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <!-- 開いた口（ぱくぱく用） -->
+          <ellipse id="mouth-open" cx="80" cy="89" rx="3.5" ry="2.5" fill="#c5aaf0" style="display:none"/>
+
+          <!-- ほっぺ -->
+          <ellipse cx="60"  cy="87" rx="10" ry="6" fill="url(#blush)"/>
+          <ellipse cx="100" cy="87" rx="10" ry="6" fill="url(#blush)"/>
+
+          <!-- しっぽ -->
+          <ellipse id="tail-e" cx="120" cy="104" rx="8" ry="6" fill="#daccf7" transform="rotate(25,120,104)"/>
+
+          <!-- ハッピースター -->
+          <g id="happy-g" style="display:none">
+            <text x="24"  y="48" font-size="14" opacity="0.7" fill="#c5aaf0">✦</text>
+            <text x="118" y="44" font-size="10" opacity="0.6" fill="#c5aaf0">✦</text>
+          </g>
+
+          <!-- zzz -->
+          <g id="zzz-g">
+            <text x="118" y="64" font-size="10" fill="#c5aaf0" opacity="0.8">z</text>
+            <text x="126" y="54" font-size="13" fill="#c5aaf0" opacity="0.55">z</text>
+            <text x="135" y="42" font-size="16" fill="#c5aaf0" opacity="0.35">z</text>
+          </g>
+
+        </g><!-- /pet-root -->
+      </svg>
+    </div>
+
+    <!-- SPEECH -->
+    <div class="speech-wrap">
+      <div class="bubble">
+        <span id="speech-text"></span>
+        <span id="speech-dots" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div id="tabs">
+      <button class="tab active" onclick="switchTab('chat',this)">💬 はなす</button>
+      <button class="tab" onclick="switchTab('teach',this)">📖 おしえる</button>
+      <button class="tab" onclick="switchTab('diary',this)">📝 日記</button>
+      <button class="tab" onclick="switchTab('knowledge',this)">🧠 記憶</button>
+    </div>
+
+    <!-- PANELS -->
+    <div id="panels">
+
+      <!-- CHAT -->
+      <div class="panel active" id="chat-panel">
+        <div id="chat-msgs"></div>
+        <div id="chat-bar">
+          <input id="chat-input" type="text" placeholder="まなぼに話しかける…"
+                 autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button id="chat-send" onclick="sendChat()">↑</button>
+        </div>
+      </div>
+
+      <!-- TEACH -->
+      <div class="panel" id="teach-panel">
+        <div class="teach-scroll">
+          <div class="sec-title">教科を選ぶ</div>
+          <div class="chips">
+            <button class="chip" onclick="selSubject('数学',this)">数学</button>
+            <button class="chip" onclick="selSubject('理科',this)">理科</button>
+            <button class="chip" onclick="selSubject('社会',this)">社会</button>
+            <button class="chip" onclick="selSubject('国語',this)">国語</button>
+            <button class="chip" onclick="selSubject('英語',this)">英語</button>
+            <button class="chip" onclick="selSubject('日常',this)">日常</button>
+          </div>
+          <div class="sec-title">おしえる内容</div>
+          <textarea class="teach-ta" id="teach-ta"
+                    placeholder="ここに書いてね。なんでもOK！" rows="4"></textarea>
+          <div id="misread-area" style="display:none">
+            <div class="misread">
+              <div class="misread-lbl">まなぼの解釈 💭</div>
+              <div id="misread-text"></div>
+            </div>
+          </div>
+        </div>
+        <div class="teach-foot">
+          <button class="btn-teach" id="teach-btn" onclick="teachManabo()" disabled>
+            おしえる ✨
+          </button>
+        </div>
+      </div>
+
+      <!-- DIARY -->
+      <div class="panel" id="diary-panel">
+        <div class="diary-scroll">
+          <div class="sec-title">まなぼに書かせる</div>
+          <div class="diary-grid">
+            <button class="diary-btn" onclick="generateDiary('日記')">📔 今日の日記</button>
+            <button class="diary-btn" onclick="generateDiary('小説')">📖 短編小説</button>
+            <button class="diary-btn" onclick="generateDiary('発表')">🎤 授業で発表</button>
+            <button class="diary-btn" onclick="generateDiary('詩')">🌸 詩を書く</button>
+          </div>
+          <div id="diary-meta" class="diary-meta" style="display:none"></div>
+          <div class="diary-out" id="diary-out" style="color:#b0a0cc">（まなぼが書くよ）</div>
+        </div>
+      </div>
+
+      <!-- KNOWLEDGE -->
+      <div class="panel" id="knowledge-panel">
+        <div class="know-top">
+          <button class="filter-chip active" onclick="setFilter('すべて',this)">すべて</button>
+          <button class="filter-chip" onclick="setFilter('数学',this)">数学</button>
+          <button class="filter-chip" onclick="setFilter('理科',this)">理科</button>
+          <button class="filter-chip" onclick="setFilter('社会',this)">社会</button>
+          <button class="filter-chip" onclick="setFilter('国語',this)">国語</button>
+          <button class="filter-chip" onclick="setFilter('英語',this)">英語</button>
+          <button class="filter-chip" onclick="setFilter('日常',this)">日常</button>
+        </div>
+        <div class="storage-bar-wrap">
+          <div class="storage-bar-lbl" id="storage-lbl">容量使用: 計算中…</div>
+          <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
+        </div>
+        <div class="know-count" id="know-count"></div>
+        <div class="know-scroll" id="know-scroll">
+          <div class="know-empty" id="know-empty">
+            まだ何も覚えてないよ…<br>「おしえる」タブから教えてあげてね 🐾
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panels -->
+  </div><!-- /main-app -->
+</div><!-- /app -->
+
+<!-- EDIT MODAL -->
+<div id="edit-bg" onclick="if(event.target===this)closeEdit()">
+  <div id="edit-sheet">
+    <h3>✏ 記憶を編集</h3>
+    <input  class="edit-field" id="edit-topic"   type="text" placeholder="トピック"/>
+    <textarea class="edit-field" id="edit-summary" rows="3" placeholder="まなぼの理解（正確な内容）"></textarea>
+    <input  class="edit-field" id="edit-mis"     type="text" placeholder="まなぼのズレた解釈（任意）"/>
+    <div class="edit-row">
+      <button class="btn-cancel" onclick="closeEdit()">キャンセル</button>
+      <button class="btn-save"   onclick="saveEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- LEVEL UP -->
+<div id="lv-overlay">
+  <div class="star">✦</div>
+  <h2>レベルアップ！</h2>
+  <p id="lv-msg"></p>
+  <button onclick="document.getElementById('lv-overlay').classList.remove('show')">やったー！</button>
+</div>
+
+<!-- DRAWER -->
+<div id="drawer-bg" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <button class="d-close" onclick="closeDrawer()">✕</button>
+  <h2>⚙ 設定</h2>
+  <div class="d-sec">
+    <div class="d-lbl">Gemini APIキー</div>
+    <input class="d-input" id="d-api" type="password" placeholder="APIキーを貼り付け" autocomplete="off"/>
+    <button class="d-btn" onclick="saveApiKey()">保存する</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">🔒 親モード</div>
+    <button class="d-btn" onclick="openParentMode()">こっそり追加する</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">データをリセット</div>
+    <button class="d-btn danger" onclick="resetAll()">記憶・会話を全消去</button>
+  </div>
+</div>
+
+<!-- PARENT MODAL -->
+<div id="parent-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:11px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🔒 親モード — こっそり仕込む</h3>
+      <button onclick="closeParentMode()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <p style="font-size:.78rem;color:#b0a0cc;line-height:1.6">ここで追加した知識はまなぼが「勝手に覚えてきた」ていで使います。子どもには見えません。</p>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">教科</div>
+    <select id="p-subject" style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none">
+      <option>数学</option><option>理科</option><option>社会</option>
+      <option>国語</option><option>英語</option><option>日常</option>
+    </select>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">トピック（短く）</div>
+    <input id="p-topic" type="text" placeholder="例：光合成" style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">正しい内容（まなぼが覚える事実）</div>
+    <textarea id="p-summary" rows="3" placeholder="例：植物が光を使って二酸化炭素と水から酸素と栄養を作る仕組み" style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none;resize:none"></textarea>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼのズレた解釈（任意・笑えるやつ）</div>
+    <input id="p-mis" type="text" placeholder="例：葉っぱが光ってピカピカするやつ" style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+    <button onclick="addParentKnowledge()" style="padding:13px;background:#7c5cbf;color:#fff;border:none;border-radius:14px;font-size:.95rem;font-weight:600;font-family:inherit;cursor:pointer">こっそり追加する ✨</button>
+    <div id="p-result" style="font-size:.82rem;color:#4caf7d;text-align:center;min-height:1.2em"></div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em;margin-top:4px">仕込み済みリスト</div>
+    <div id="parent-list" style="display:flex;flex-direction:column;gap:7px"></div>
+  </div>
+</div>
+
+
+<script src="app.js"></script>
+</body>
+</html>
