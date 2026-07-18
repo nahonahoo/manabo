@@ -96,22 +96,24 @@
           <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(30,124,95)"/>
 
           <!-- 体 -->
-          <ellipse cx="80" cy="85" rx="44" ry="42" fill="url(#mg)"/>
+          <ellipse id="body-e" cx="80" cy="85" rx="44" ry="42" fill="url(#mg)"/>
 
-          <!-- 耳 -->
-          <ellipse cx="48"  cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(-15,48,53)"/>
-          <ellipse cx="50"  cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(-15,50,54)"/>
-          <ellipse cx="112" cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(15,112,53)"/>
-          <ellipse cx="110" cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(15,110,54)"/>
+          <!-- 耳グループ（形変更用） -->
+          <g id="ear-g">
+            <ellipse id="ear-l" cx="48"  cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(-15,48,53)"/>
+            <ellipse id="ear-l-in" cx="50"  cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(-15,50,54)"/>
+            <ellipse id="ear-r" cx="112" cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(15,112,53)"/>
+            <ellipse id="ear-r-in" cx="110" cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(15,110,54)"/>
+          </g>
 
           <!-- 顔ベース -->
-          <ellipse cx="80" cy="82" rx="35" ry="32" fill="#ede0ff"/>
+          <ellipse id="face-e" cx="80" cy="82" rx="35" ry="32" fill="#ede0ff"/>
 
           <!-- 目（通常） -->
           <g id="eyes-g">
-            <ellipse cx="67" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
+            <ellipse id="eye-l" cx="67" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
             <circle  cx="69" cy="73.5" r="1.4" fill="white"/>
-            <ellipse cx="93" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
+            <ellipse id="eye-r" cx="93" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
             <circle  cx="95" cy="73.5" r="1.4" fill="white"/>
           </g>
 
@@ -136,21 +138,40 @@
           </g>
 
           <!-- 鼻 -->
-          <ellipse cx="80" cy="83" rx="2.2" ry="1.8" fill="#b09ad4"/>
+          <ellipse id="nose-e" cx="80" cy="83" rx="2.2" ry="1.8" fill="#b09ad4"/>
 
-          <!-- 口（ぱくぱく2状態） -->
-          <!-- 閉じ気味（小さく横幅絞る） -->
+          <!-- 口 -->
           <path id="mouth-p" d="M77 87 Q80 91 83 87"
                 stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          <!-- 開いた口（ぱくぱく用） -->
           <ellipse id="mouth-open" cx="80" cy="89" rx="3.5" ry="2.5" fill="#c5aaf0" style="display:none"/>
 
           <!-- ほっぺ -->
-          <ellipse cx="60"  cy="87" rx="10" ry="6" fill="url(#blush)"/>
-          <ellipse cx="100" cy="87" rx="10" ry="6" fill="url(#blush)"/>
+          <ellipse id="blush-l" cx="60"  cy="87" rx="10" ry="6" fill="url(#blush)"/>
+          <ellipse id="blush-r" cx="100" cy="87" rx="10" ry="6" fill="url(#blush)"/>
 
           <!-- しっぽ -->
           <ellipse id="tail-e" cx="120" cy="104" rx="8" ry="6" fill="#daccf7" transform="rotate(25,120,104)"/>
+
+          <!-- アクセサリー（リボン） -->
+          <g id="ribbon-g" style="display:none">
+            <polygon points="48,42 56,48 48,54" fill="#f97cb0" opacity="0.9"/>
+            <polygon points="64,42 56,48 64,54" fill="#f97cb0" opacity="0.9"/>
+            <circle cx="56" cy="48" r="3.5" fill="#fb9cc8"/>
+          </g>
+          <!-- アクセサリー（メガネ） -->
+          <g id="glasses-g" style="display:none">
+            <rect x="58" y="70" width="18" height="13" rx="5" fill="none" stroke="#7c5cbf" stroke-width="2"/>
+            <rect x="84" y="70" width="18" height="13" rx="5" fill="none" stroke="#7c5cbf" stroke-width="2"/>
+            <line x1="76" y1="76" x2="84" y2="76" stroke="#7c5cbf" stroke-width="2"/>
+            <line x1="58" y1="76" x2="55" y2="74" stroke="#7c5cbf" stroke-width="2"/>
+            <line x1="102" y1="76" x2="105" y2="74" stroke="#7c5cbf" stroke-width="2"/>
+          </g>
+          <!-- アクセサリー（帽子） -->
+          <g id="hat-g" style="display:none">
+            <ellipse cx="80" cy="47" rx="24" ry="5" fill="#7c5cbf"/>
+            <rect x="66" y="25" width="28" height="23" rx="5" fill="#7c5cbf"/>
+            <rect x="70" y="29" width="20" height="8" rx="3" fill="#c5aaf0" opacity="0.5"/>
+          </g>
 
           <!-- ハッピースター -->
           <g id="happy-g" style="display:none">
@@ -388,6 +409,69 @@
       <textarea id="p13-persona" rows="3" placeholder="例：ちょっとおっちょこちょいで、でも一生懸命な子。関西弁も混じる。"
         style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.82rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none;resize:none;line-height:1.6"></textarea>
       <button onclick="savePersona()" style="padding:9px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:600;font-family:inherit;cursor:pointer">保存する</button>
+    </div>
+
+    <!-- 見た目カスタマイズ -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの見た目</div>
+
+      <!-- カラーピッカー群 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          体の色（明るい側）
+          <input type="color" id="c-body-light" value="#ede0ff" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          体の色（暗い側）
+          <input type="color" id="c-body-dark" value="#c5aaf0" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          目の色
+          <input type="color" id="c-eye" value="#3a2e4a" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          ほっぺの色
+          <input type="color" id="c-blush" value="#f9b8c8" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+      </div>
+
+      <!-- 耳の形 -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">耳の形</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="setEarShape('round')" id="ear-btn-round"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #7c5cbf;background:#f0e8ff;color:#7c5cbf;font-size:.78rem;font-family:inherit;cursor:pointer">まるい</button>
+        <button onclick="setEarShape('tall')" id="ear-btn-tall"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">とがった</button>
+        <button onclick="setEarShape('small')" id="ear-btn-small"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">ちびっこ</button>
+        <button onclick="setEarShape('cat')" id="ear-btn-cat"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">ねこ</button>
+      </div>
+
+      <!-- アクセサリー -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">アクセサリー</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="setAccessory('none')" id="acc-btn-none"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #7c5cbf;background:#f0e8ff;color:#7c5cbf;font-size:.78rem;font-family:inherit;cursor:pointer">なし</button>
+        <button onclick="setAccessory('ribbon')" id="acc-btn-ribbon"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">🎀 リボン</button>
+        <button onclick="setAccessory('glasses')" id="acc-btn-glasses"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">👓 メガネ</button>
+        <button onclick="setAccessory('hat')" id="acc-btn-hat"
+          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">🎩 帽子</button>
+      </div>
+
+      <button onclick="saveAppearance()" style="padding:11px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:600;font-family:inherit;cursor:pointer;margin-top:2px">見た目を保存する</button>
+      <button onclick="resetAppearance()" style="padding:8px;background:#f5eedd;color:#7a6a9a;border:1px solid #e8ddf5;border-radius:10px;font-size:.78rem;font-family:inherit;cursor:pointer">デフォルトに戻す</button>
     </div>
 
     <div id="p13-result" style="font-size:.82rem;color:#4caf7d;text-align:center;min-height:1.2em"></div>
