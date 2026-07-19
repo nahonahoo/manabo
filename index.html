@@ -436,6 +436,10 @@
     <button class="d-btn" onclick="openPersonalize()">まなぼをカスタマイズする</button>
   </div>
   <div class="d-sec">
+    <div class="d-lbl">🔄 データ更新</div>
+    <button class="d-btn" onclick="forceRefresh();closeDrawer()">最新データに更新する 🔄</button>
+  </div>
+  <div class="d-sec">
     <div class="d-lbl">データをリセット</div>
     <button class="d-btn danger" onclick="resetAll()">記憶・会話を全消去</button>
   </div>
@@ -585,6 +589,6 @@
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
