@@ -793,29 +793,21 @@ function renderKnowledge() {
   const empty = document.getElementById('know-empty');
   const countEl = document.getElementById('know-count');
 
-  // おみやげ知識エリア更新
+  // 交流レベル表示
   const omiyageSection = document.getElementById('omiyage-section');
-  const omiyageList = document.getElementById('omiyage-list');
   const kouryuEl = document.getElementById('kouryu-lv');
-  if (omiyageSection && omiyageList) {
-    if (S.omiyage.length > 0) {
-      omiyageSection.style.display = '';
-      if (kouryuEl) kouryuEl.textContent = S.omiyage.length;
-      omiyageList.innerHTML = S.omiyage.slice().reverse().slice(0,5).map(o => `
-        <div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:8px 11px">
-          <div style="font-size:10px;color:#c08000;margin-bottom:3px">🎁 ${esc(o.from || 'おみやげ')} より</div>
-          <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(o.topic)}</div>
-          <div style="font-size:.75rem;color:#7a6a9a;margin-top:2px">${esc(o.insight)}</div>
-        </div>`).join('');
-    } else {
-      omiyageSection.style.display = 'none';
-    }
+  if (omiyageSection) {
+    omiyageSection.style.display = S.omiyage.length > 0 ? '' : 'none';
+    if (kouryuEl) kouryuEl.textContent = S.omiyage.length;
   }
 
-  // フィルタ
-  const filtered = S.filterSubject === 'すべて'
-    ? S.knowledge
-    : S.knowledge.filter(k => k.subject === S.filterSubject);
+  // フィルタ（おみやげは別リストから表示）
+  const isOmiyage = S.filterSubject === 'おみやげ';
+  const filtered = isOmiyage
+    ? [] // おみやげフィルター時は通常知識を表示しない
+    : S.filterSubject === 'すべて'
+      ? S.knowledge
+      : S.knowledge.filter(k => k.subject === S.filterSubject);
 
   // ストレージ表示
   const usage = getStorageUsage();
@@ -833,6 +825,30 @@ function renderKnowledge() {
   countEl.textContent = `${filtered.length} 件${S.filterSubject !== 'すべて' ? `（${S.filterSubject}）` : ''}`;
 
   sc.querySelectorAll('.know-card').forEach(e => e.remove());
+
+  // おみやげフィルター時はおみやげ知識を表示
+  if (isOmiyage) {
+    if (S.omiyage.length === 0) {
+      empty.style.display = '';
+      countEl.textContent = 'おみやげ知識はまだないよ';
+      return;
+    }
+    empty.style.display = 'none';
+    countEl.textContent = `おみやげ ${S.omiyage.length} 件`;
+    [...S.omiyage].reverse().forEach(o => {
+      const d = document.createElement('div');
+      d.className = 'know-card';
+      d.innerHTML = `
+        <span class="know-subj" style="background:#fff8e0;color:#c08000;border:1px solid #f0d080">🎁</span>
+        <div class="know-body">
+          <div class="know-topic">${esc(o.topic)}</div>
+          <div class="know-sum">${esc(o.insight)}</div>
+          <div class="know-mis">✉ ${esc(o.from || 'おみやげ')} より</div>
+        </div>`;
+      sc.appendChild(d);
+    });
+    return;
+  }
 
   // 新しい順
   [...filtered].reverse().forEach(k => {
@@ -1491,12 +1507,23 @@ async function inviteManabo() {
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
 今「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）の部屋に遊びに来た。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。`;
 
-  // まなぼのappearanceも取得してアイコンに使う
+  // まなぼのappearanceをサーバーから直接取得（キャッシュバイパス）
   let manaboAppearance = null;
   try {
-    const d2 = await fsReadPartner(PARTNER_ID);
-    if (d2?.appearance) manaboAppearance = JSON.parse(d2.appearance);
-  } catch(e) {}
+    const db = getDB();
+    const snap = await db.collection('manabo').doc(PARTNER_ID).get({ source: 'server' });
+    if (snap.exists) {
+      const latest = snap.data();
+      if (latest.appearance) manaboAppearance = JSON.parse(latest.appearance);
+      if (latest.petName) manaboName = latest.petName;
+    }
+  } catch(e) {
+    try {
+      const latest = await fsReadPartner(PARTNER_ID);
+      if (latest?.appearance) manaboAppearance = JSON.parse(latest.appearance);
+      if (latest?.petName) manaboName = latest.petName;
+    } catch(e2) {}
+  }
   const manaboSVG = buildMiniSVG(manaboAppearance, 28);
 
   try {
