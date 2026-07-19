@@ -234,6 +234,7 @@
             <button class="diary-btn" onclick="generateDiary('詩')">🌸 うた</button>
             <button class="diary-btn" onclick="generateJointDiary('合同日記')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📔 まなぼといっしょに</button>
             <button class="diary-btn" onclick="generateJointDiary('合同小説')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📖 おはなしいっしょに</button>
+            <button class="diary-btn" onclick="generateDiary('ひらめき')" style="border-color:#f0b800;color:#c08000;grid-column:span 2;font-weight:700">✨ ひらめきにっき</button>
           </div>
           <div id="diary-meta" class="diary-meta" style="display:none"></div>
           <div class="diary-out" id="diary-out" style="color:#b0a0cc">（まなぼが書くよ）</div>
@@ -256,6 +257,12 @@
           <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
         </div>
         <div class="know-count" id="know-count"></div>
+        <div id="omiyage-section" style="padding:8px 12px 0;display:none">
+          <div style="font-size:11px;font-weight:600;color:#c08000;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">
+            🎁 おみやげ（こうりゅうレベル <span id="kouryu-lv">0</span>）
+          </div>
+          <div id="omiyage-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+        </div>
         <div class="know-scroll" id="know-scroll">
           <div class="know-empty" id="know-empty">
             まだ何も覚えてないよ…<br>「おしえる」タブから教えてあげてね 🐾
@@ -458,6 +465,6 @@
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

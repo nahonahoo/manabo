@@ -80,6 +80,9 @@ const S = {
   gobi: [...DEFAULT_GOBI], // カスタマイズ可能な語尾リスト
   petName: 'まなぼみに',    // ペットの名前
   persona: '',             // 性格メモ
+  omiyage: [],             // おみやげ知識
+  kouryuLv: 0,             // 交流レベル
+  partnerName: 'まなぼ',   // 相手の名前
   appearance: {            // 見た目設定
     bodyLight:  '#fff0e0',
     bodyDark:   '#ffb870',
@@ -152,6 +155,8 @@ async function saveState() {
       monoDate:  S.monoDate,
       knowledge: JSON.stringify(S.knowledge),
       gobi:      JSON.stringify(S.gobi),
+      omiyage:   JSON.stringify(S.omiyage),
+      kouryuLv:  S.kouryuLv,
       petName:    S.petName,
       persona:    S.persona,
       appearance: JSON.stringify(S.appearance),
@@ -189,7 +194,9 @@ async function loadState() {
             secret:           k.secret || false,
           }))
         : [];
-      S.gobi    = d.gobi    ? JSON.parse(d.gobi) : [...DEFAULT_GOBI];
+      S.gobi     = d.gobi    ? JSON.parse(d.gobi) : [...DEFAULT_GOBI];
+      S.omiyage  = d.omiyage  ? JSON.parse(d.omiyage) : [];
+      S.kouryuLv = d.kouryuLv || 0;
       S.petName = d.petName || 'まなぼ';
       S.persona = d.persona || '';
       if (d.appearance) {
@@ -722,6 +729,36 @@ async function generateDiary(type) {
   bounce();
 
   // ランダムに最大6件ピックして多様性を出す
+  // ひらめき日記レベル判定
+  const oLen = S.omiyage.length;
+  const hiramekiLv = oLen >= 20 ? '上級' : oLen >= 10 ? '中級' : oLen >= 3 ? '初級' : null;
+
+  if (type === 'ひらめき') {
+    if (!hiramekiLv) {
+      document.getElementById('diary-out').textContent =
+        `ひらめき日記はまだかけないよ〜！${S.partnerName || 'まなぼ'}ともっとあそんでね！（あと${3 - oLen}こおみやげがくればかけるよ！）`;
+      return;
+    }
+    const omiyageText = S.omiyage.slice(-6).map(o => `[${o.from}とのひらめき]${o.topic}：${o.insight}`).join('\n');
+    const knowledgeText = S.knowledge.slice(-6).map(k => `[${k.subject}]${k.topic}：${k.summary}`).join('\n');
+    const hiramekiSys = {
+      '初級': `ペット「${S.petName}」として「ひらめき日記」を書く。${S.partnerName || 'まなぼ'}との会話で気づいたことと自分の知識を結びつけて新しい視点を書く。ひらがなメイン。200字以内。語尾は${gobiStr()}をランダムに。`,
+      '中級': `ペット「${S.petName}」として「スーパーひらめき日記（中級）」を書く。${S.partnerName || 'まなぼ'}との交流から気づいたことを使って面白い発見を書く。ひらがなメイン。300字以内。語尾は${gobiStr()}をランダムに。`,
+      '上級': `ペット「${S.petName}」として「スーパーひらめき日記（上級）」を書く。${S.partnerName || 'まなぼ'}との深い交流から生まれた視点で、びっくりするようなひらめきを書く。ひらがなメイン。400字以内。語尾は${gobiStr()}をランダムに。`,
+    };
+    const raw = await callGemini(
+      hiramekiSys[hiramekiLv] + `\n\nおみやげ知識:\n${omiyageText}\n\n自分の知識:\n${knowledgeText}\nプレーンテキストのみ。`,
+      [{ role:'user', parts:[{ text: 'ひらめき日記を書いて' }] }]
+    );
+    document.getElementById('diary-out').textContent = raw.trim();
+    const meta = document.getElementById('diary-meta');
+    meta.textContent = `✨ ひらめき日記（${hiramekiLv}）・${new Date().toLocaleDateString('ja-JP')}`;
+    meta.style.display = '';
+    bounce(); showHappy(true);
+    typeText(`ひらめいたよ！えへへ！すごい？`);
+    return;
+  }
+
   const picks = [...S.knowledge].sort(() => Math.random() - .5).slice(0, 6);
   const topics = picks.map(k => `[${k.subject}]${k.topic}：${k.summary}（誤解：${k.misunderstanding || 'なし'}）`).join('\n');
 
@@ -754,6 +791,25 @@ function renderKnowledge() {
   const sc = document.getElementById('know-scroll');
   const empty = document.getElementById('know-empty');
   const countEl = document.getElementById('know-count');
+
+  // おみやげ知識エリア更新
+  const omiyageSection = document.getElementById('omiyage-section');
+  const omiyageList = document.getElementById('omiyage-list');
+  const kouryuEl = document.getElementById('kouryu-lv');
+  if (omiyageSection && omiyageList) {
+    if (S.omiyage.length > 0) {
+      omiyageSection.style.display = '';
+      if (kouryuEl) kouryuEl.textContent = S.omiyage.length;
+      omiyageList.innerHTML = S.omiyage.slice().reverse().slice(0,5).map(o => `
+        <div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:8px 11px">
+          <div style="font-size:10px;color:#c08000;margin-bottom:3px">🎁 ${esc(o.from || 'おみやげ')} より</div>
+          <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(o.topic)}</div>
+          <div style="font-size:.75rem;color:#7a6a9a;margin-top:2px">${esc(o.insight)}</div>
+        </div>`).join('');
+    } else {
+      omiyageSection.style.display = 'none';
+    }
+  }
 
   // フィルタ
   const filtered = S.filterSubject === 'すべて'
@@ -1452,15 +1508,51 @@ ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
   window._manaboName = manaboName;
   window._manaboPersona = manaboPersona;
   window._manaboSVG = manaboSVG;
+  S.partnerName = manaboName;
 }
 
-function byeManabo() {
+async function byeManabo() {
   if (!manaboInChat) return;
   manaboInChat = false;
   document.getElementById('invite-manabo-btn').style.display = '';
   document.getElementById('bye-manabo-btn').style.display = 'none';
-  addChatMsgWithIcon('manabo-visit', '🟣', 'じゃあまたね〜だぼ！みにちゃん勉強してるぼ？（去り際にツッコむ）');
-  typeText('まなぼかえっちゃった…またきてね！');
+  const manaboName = window._manaboName || 'まなぼ';
+  const manaboSVG = window._manaboSVG || buildMiniSVG(null, 28);
+  addChatMsgWithSVG(manaboSVG, 'じゃあまたね〜だぼ！みにちゃん元気でね！（去り際にツッコむ）', '#ede0ff', '#c5aaf0');
+  typeText('まなぼかえっちゃった…またきてね！えへへ');
+  await generateOmiyage(manaboName);
+}
+
+async function generateOmiyage(partnerName) {
+  const recentChat = S.chatHistory.slice(-10)
+    .map(m => `${m.role === 'user' ? 'ユーザー' : partnerName}：${m.parts?.[0]?.text || ''}`)
+    .join('\n');
+  if (!recentChat.trim()) return;
+
+  const sys = `会話ログから「ふたつのペットが一緒に話して生まれた気づき・発見・面白い視点」を1〜3個抽出してください。
+JSON形式のみ:
+[{"topic":"（発見の短いタイトル）","insight":"（どんなひらめきか1文、子どもでも分かる言葉で）","from":"${partnerName}"}]
+何もなければ空配列 [] を返す。`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `会話ログ:\n${recentChat}` }] }]);
+    const items = parseJSON(raw);
+    if (Array.isArray(items) && items.length > 0) {
+      items.forEach(item => {
+        S.omiyage.push({
+          id: crypto.randomUUID(),
+          topic: item.topic,
+          insight: item.insight,
+          from: item.from || partnerName,
+          at: Date.now(),
+        });
+      });
+      S.kouryuLv = S.omiyage.length;
+      await saveState();
+      showToast(`🎁 おみやげ！${items.length}こ とどいたよ！`);
+      typeText(`わあ！まなぼとはなしてひらめいたよ！えへへ！`);
+    }
+  } catch(e) { console.warn('omiyage error', e); }
 }
 
 function addChatMsgWithIcon(role, icon, text) {
