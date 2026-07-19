@@ -616,7 +616,7 @@ async function replyAsMini(userMsg) {
   const sys = `あなたはペット「${miniName}」。幼稚園〜小学生くらいの生意気で鋭くて好奇心旺盛なキャラ。
 知識をどんどん増やしたくて鋭い質問をしてしまう。アホで破天荒な面もある愉快なキャラ。
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
-まなぼ（年上・ユーモア・ツッコミ役）の部屋にいる。語尾は「〜だよ！」「えへへ」「わあ！」など。返答30字以内。ひらがなメイン。`;
+まなぼ（ユーモアたっぷりのツッコミ役せんぱい・性別なし・妖精みたいなキャラ）の部屋にいる。語尾は「〜だよ！」「えへへ」「わあ！」など。返答30字以内。ひらがなメイン。`;
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
     const svg = window._miniSVG || buildMiniSVG(null, 28);
@@ -1435,7 +1435,7 @@ async function generateJointDiary(type) {
   } catch(e) {}
 
   const sys = type === '合同日記'
-    ? `ペット「まなぼ」と「まなぼみに」の2匹が一緒に書いた共同日記。2匹が交互に話しながらズレた知識を混ぜる。まなぼは年上でユーモアがありツッコミ役。まなぼみには生意気で鋭くてアホな面もある。語尾ルール：まなぼは「〜だぼ」「ぎゃぼー」、まなぼみには「〜だよ！」「えへへ」「わあ！」。300字以内。プレーンテキストのみ。`
+    ? `ペット「まなぼ」と「まなぼみに」の2匹が一緒に書いた共同日記。2匹が交互に話しながらズレた知識を混ぜる。まなぼはユーモアがありツッコミ役のせんぱい的な存在（性別なし・妖精みたいなキャラ）。まなぼみには生意気で鋭くてアホな面もある。語尾ルール：まなぼは「〜だぼ」「ぎゃぼー」、まなぼみには「〜だよ！」「えへへ」「わあ！」。300字以内。プレーンテキストのみ。`
     : `ペット「まなぼ」と「まなぼみに」の2匹が一緒に作った短編小説。まなぼは語り部でツッコミ役、まなぼみには主人公で生意気。2匹の知識がカオスにまざる。400字以内。プレーンテキストのみ。`;
 
   const userMsg = `まなぼの知識:\n${myTopics || 'なし'}\n\nまなぼみにの知識:\n${partnerTopics || 'なし'}`;
@@ -1477,13 +1477,14 @@ async function inviteMini() {
   const sys = `あなたはペット「${miniName}」。幼稚園〜小学1年生くらいの生意気で鋭くて好奇心旺盛なキャラ。
 知識をどんどん増やしたくて鋭い質問をしてしまう。でもアホで破天荒な面白いことも言う愉快なキャラ。
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
-今まなぼ（年上・ユーモアがある・ツッコミ役）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
+今まなぼ（ユーモアたっぷりのせんぱい・性別なし・妖精みたいなキャラ）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
 
-  // まなぼみにのappearanceも取得してアイコンに使う
+  // まなぼみにのappearance・petNameを最新状態で取得（招待のたびに最新を読む）
   let miniAppearance = null;
   try {
-    const d2 = await fsReadPartner(PARTNER_ID);
-    if (d2?.appearance) miniAppearance = JSON.parse(d2.appearance);
+    const latest = await fsReadPartner(PARTNER_ID);
+    if (latest?.appearance) miniAppearance = JSON.parse(latest.appearance);
+    if (latest?.petName) miniName = latest.petName; // 最新の名前も更新
   } catch(e) {}
   const miniSVG = buildMiniSVG(miniAppearance, 28);
 
