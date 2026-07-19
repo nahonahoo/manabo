@@ -1577,10 +1577,14 @@ JSON形式のみ（コードブロック不要）:
           at: Date.now(),
         });
       });
+      const prevLv = S.kouryuLv;
       S.kouryuLv = S.omiyage.length;
       await saveState();
+      renderKnowledge();
       showToast(`🎁 おみやげ知識が ${items.length}個 届いたぼ！`);
       typeText(`ぎゃぼー！みにちゃんとはなしてひらめいたぼ！`);
+      // 交流レベル解放通知
+      checkKouryuUnlock(prevLv, S.kouryuLv);
     }
   } catch(e) { console.warn('omiyage error', e); }
 }
@@ -1646,10 +1650,14 @@ JSON形式のみ:
           });
         }
       });
+      const prevLv = S.kouryuLv;
       S.kouryuLv = S.omiyage.length;
       await saveState();
       renderKnowledge();
-      if (items.length > 0) showToast(`💌 手紙からひらめき ${items.length}個 届いたぼ！`);
+      if (items.length > 0) {
+        showToast(`💌 手紙からひらめき ${items.length}個 届いたぼ！`);
+        checkKouryuUnlock(prevLv, S.kouryuLv);
+      }
     }
   } catch(e) { console.warn('letter omiyage error', e); }
 }
@@ -1692,4 +1700,22 @@ async function forceRefresh() {
   } catch(e) {
     showToast('⚠ 更新できなかったぼ…もう一度試してほしいぼ');
   }
+}
+
+// ── 交流レベル解放通知 ──
+function checkKouryuUnlock(prevLv, newLv) {
+  const unlocks = [
+    { at: 3,  msg: '✨ ひらめき日記（初級）が解放されたぼ！日記タブから書けるぼ！' },
+    { at: 10, msg: '🌟 ひらめき日記（中級）に進化したぼ！3教科をつなぐ発見が生まれるぼ！' },
+    { at: 20, msg: '💫 ひらめき日記（上級）に進化したぼ！受験レベルのひらめきが書けるようになったぼ！' },
+  ];
+  unlocks.forEach(u => {
+    if (prevLv < u.at && newLv >= u.at) {
+      // レベルアップ画面を少し流用して表示
+      setTimeout(() => {
+        document.getElementById('lv-msg').textContent = u.msg;
+        document.getElementById('lv-overlay').classList.add('show');
+      }, 1500);
+    }
+  });
 }
