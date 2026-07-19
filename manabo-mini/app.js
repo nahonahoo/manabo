@@ -529,6 +529,23 @@ async function sendChat() {
     typeText('えーっと…うまくきこえなかった…');
   }
   S.isThinking = false;
+
+  // まなぼが招待されていたら、まなぼも返事する
+  if (manaboInChat && txt) {
+    setTimeout(() => replyAsManabo(txt), 900);
+  }
+}
+
+async function replyAsManabo(userMsg) {
+  const manaboName = window._manaboName || 'まなぼ';
+  const manaboPersona = window._manaboPersona || '';
+  const sys = `あなたはペット「${manaboName}」。年上でユーモアがあってお笑い芸人みたいに面白い。話をよく聞きながらツッコミを入れる。
+${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
+「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛）の部屋にいる。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答30字以内。`;
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
+    addChatMsgWithIcon('manabo-visit', '🟣', raw.trim());
+  } catch(e) {}
 }
 
 // チャットで知識が保存されたときのさりげない表示
@@ -1332,16 +1349,35 @@ async function inviteManabo() {
   document.getElementById('invite-manabo-btn').style.display = 'none';
   document.getElementById('bye-manabo-btn').style.display = '';
 
-  // まなぼのキャラでチャットに登場
-  const sys = `あなたはペット「まなぼ」。年上でユーモアがあってお笑い芸人みたいに面白い。まなぼみに（小学生くらい・生意気・好奇心旺盛）と話している。ツッコミが上手で話をよく聞く。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。`;
+  // まなぼのpetName・personaをFirebaseから取得
+  let manaboName = 'まなぼ';
+  let manaboPersona = '';
   try {
-    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: 'まなぼみにの部屋に遊びに来た。登場の一言を言って。' }] }]);
+    const d = await fsReadPartner(PARTNER_ID);
+    if (d) {
+      manaboName = d.petName || 'まなぼ';
+      manaboPersona = d.persona || '';
+    }
+  } catch(e) {}
+
+  // まなぼのキャラでチャットに登場
+  const sys = `あなたはペット「${manaboName}」。年上でユーモアがあってお笑い芸人みたいに面白い。話をよく聞きながらツッコミを入れる。
+${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
+今「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）の部屋に遊びに来た。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `${manaboName}が${S.petName}の部屋に遊びに来た。登場の一言を言って。` }] }]);
     addChatMsgWithIcon('manabo-visit', '🟣', raw.trim());
-    typeText('わあ！まなぼがきた！えへへ！');
-    bounce(); showHappy(true);
+    typeText(`わあ！${manaboName}がきた！えへへ！`);
   } catch(e) {
-    addChatMsgWithIcon('manabo-visit', '🟣', 'ぎゃぼー！みにちゃん元気だぼ？');
+    addChatMsgWithIcon('manabo-visit', '🟣', 'ぎゃぼー！元気だぼ？');
+    typeText('わあ！まなぼがきた！えへへ！');
   }
+  bounce(); showHappy(true);
+
+  // チャット送信時にまなぼも返事するよう設定
+  window._manaboName = manaboName;
+  window._manaboPersona = manaboPersona;
 }
 
 function byeManabo() {
