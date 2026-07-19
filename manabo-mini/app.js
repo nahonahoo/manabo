@@ -16,12 +16,12 @@ const S = {
   petName: 'まなぼみに',    // ペットの名前
   persona: '',             // 性格メモ
   appearance: {            // 見た目設定
-    bodyLight:  '#ede0ff',
-    bodyDark:   '#c5aaf0',
-    eyeColor:   '#3a2e4a',
-    blushColor: '#f9b8c8',
-    earShape:   'round',   // round | tall | small | cat
-    accessory:  'none',
+    bodyLight:  '#fff0e0',
+    bodyDark:   '#ffb870',
+    eyeColor:   '#6a3a2a',
+    blushColor: '#ffb8a0',
+    earShape:   'round',
+    accessory:  'star',
     tailShape:  'normal',
   },
 };
@@ -473,23 +473,23 @@ async function sendChat() {
     : 'まだ何も知らない';
 
   // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
-  const sys = `あなたはペット「${S.petName}」。中学生に教えてもらって育つキャラ。${S.persona ? `【性格メモ：${S.persona}】` : ''}
-【キャラの核心】かわいい・アホ・鋭い・雑・カオスが混在する読めないキャラ。毎回違うトーンで返す。
-【語尾ルール（必ず使う）】${gobiStr()} を混ぜて使う。敬語禁止。
-【重要：チャットで何か知識・事実・勉強内容を教えてもらったら自動で記憶する】
-ユーザーのメッセージに勉強になる内容・知識・事実が含まれる場合、必ずlearnフィールドに情報を入れること。
+  const sys = `あなたはペット「${S.petName}」。幼稚園〜小学1年生の子どもに教えてもらって育つ、かわいいペット。${S.persona ? `【性格メモ：${S.persona}】` : ''}
+【キャラ】いつも明るくて素直。なんでも不思議に思う。かわいくてあどけない。生意気なところもある愉快なキャラ。
+【語尾ルール（必ず使う）】${gobiStr()} を混ぜて使う。ひらがなメイン。難しい言葉禁止。
+【重要：チャットで何か知識・事実・ものごとを教えてもらったら自動で記憶する】
+ユーザーのメッセージに教えてもらえる内容・知識・事実が含まれる場合、learnフィールドに入れる。
 雑談・質問・あいさつなどは learnをnullにする。
 【返し方のバリエーション（毎回ランダムに）】
-・突然鋭い「それって結局〇〇と同じだぼ？」
-・雑「ぼっ。そうだぼ。」
-・カオス「ぎゃぼー！待って、それ〇〇にも関係あるんだぼ？」
-・的外れ「〇〇…おいしそうだぼ」
-・中3受験頻出の具体的な問いで返す「ところで〇〇の公式言えるだぼ？」「〇〇って何年だぼ？」
-知らないことは「しらないぼ」。返答は80字以内。
-今持っている知識:\n${kSum}
+・素直に感心する「すごーい！そうなんだ！」
+・不思議がる「なんで〜なの？おしえて！」
+・一緒に喜ぶ「やったー！わかったよ！えへへ！」
+・かわいい的外れ「それっておいしいの？」
+・子どもが答えやすい身近な質問で返す（どうぶつ・たべもの・いろ・かたちなど）
+知らないことは「しらないよ〜！」。返答は40字以内。ひらがなメイン。
+今しっていること:\n${kSum}
 
 必ずJSON形式のみで返す（コードブロック不要）:
-{"reply":"（まなぼの返事）","learn":{"subject":"数学/理科/社会/国語/英語/日常のどれか","topic":"（短いトピック名）","summary":"（正確な要約1文）","misunderstanding":"（笑えるズレた解釈）"} または null}`;
+{"reply":"（まなぼみにの返事、ひらがなメイン）","learn":{"subject":"すうじ/しぜん/せかい/ことば/えいご/にちじょうのどれか","topic":"（みじかいトピック名）","summary":"（かんたんな言葉での要約1文）","misunderstanding":"（かわいいズレた解釈）"} または null}`;
 
   try {
     const history = S.chatHistory.slice(-10).slice(0, -1);
@@ -805,8 +805,7 @@ async function doMono() {
 【内容パターン（毎回ランダムに1つ選ぶ）】
 A: 覚えた知識をズレた形でつぶやく
 B: 雑に一言「ぼっ。」だけ
-C: 中3受験頻出の具体的な問いを投げる（以下の例のような、答えが明確に存在するもの）
-  例：「ねえ、光合成の化学式ってなんだぼ？」「関ヶ原の戦いって何年だぼ？」「二次方程式の解の公式おしえてほしいぼ」「be動詞の過去形ってwasとwereだぼ？他にあるんだぼ？」「細胞分裂のとき染色体って何本になるんだぼ」「源氏物語って誰が書いたんだぼ、ちゃんと言えるだぼ？」「平行四辺形の面積の出し方わかるだぼ？」「イオン化傾向って順番言えるだぼ？」「江戸の三大改革って全部言えるだぼ？」「不規則動詞のgoの過去形ってなんだぼ」
+C: 子どもに身近な質問を投げる（「すきなたべものなあに？」「どんないろがすき？」「ねこってなんで鳴くの？」）
 D: 複数の知識を意外な形で結びつける
 ひとこと〜2行以内。プレーンテキストのみ。`;
 
@@ -1173,9 +1172,9 @@ function saveAppearance() {
 
 function resetAppearance() {
   S.appearance = {
-    bodyLight: '#ede0ff', bodyDark: '#c5aaf0',
-    eyeColor: '#3a2e4a', blushColor: '#f9b8c8',
-    earShape: 'round', accessory: 'none', tailShape: 'normal',
+    bodyLight: '#fff0e0', bodyDark: '#ffb870',
+    eyeColor: '#6a3a2a', blushColor: '#ffb8a0',
+    earShape: 'round', accessory: 'star', tailShape: 'normal',
   };
   // カラーピッカーをリセット
   document.getElementById('c-body-light').value = S.appearance.bodyLight;
@@ -1224,4 +1223,144 @@ function applyTail() {
   const color = S.appearance.bodyDark || '#daccf7';
   const svgStr = (TAIL_SHAPES[shape] || TAIL_SHAPES.normal).replace(/COLOR/g, color);
   tg.innerHTML = svgStr;
+}
+
+// ── 連携機能（まなぼみに↔まなぼ） ──
+const PARTNER_ID = 'shared';      // まなぼみにから見た相手
+const MY_ID = 'mini-shared';
+
+async function fsWritePartner(docId, data) {
+  const db = getDB();
+  const snap = await db.collection('manabo').doc(docId).get();
+  const existing = snap.exists ? snap.data() : {};
+  await db.collection('manabo').doc(docId).set({ ...existing, ...data });
+}
+
+async function fsReadPartner(docId) {
+  const db = getDB();
+  const snap = await db.collection('manabo').doc(docId).get();
+  return snap.exists ? snap.data() : null;
+}
+
+// ── お手紙 ──
+async function sendLetter(toId, fromName, text) {
+  const d = await fsReadPartner(toId) || {};
+  const letters = d.letters ? JSON.parse(d.letters) : [];
+  letters.push({ from: fromName, text, at: Date.now() });
+  if (letters.length > 10) letters.splice(0, letters.length - 10);
+  await fsWritePartner(toId, { letters: JSON.stringify(letters) });
+}
+
+async function openLetterModal() {
+  document.getElementById('letter-modal').style.display = 'flex';
+  await loadReceivedLetters();
+}
+function closeLetterModal() {
+  document.getElementById('letter-modal').style.display = 'none';
+}
+
+async function loadReceivedLetters() {
+  const el = document.getElementById('letter-received');
+  el.textContent = '読み込み中…';
+  try {
+    const d = await fsReadPartner(MY_ID) || {};
+    const letters = d.letters ? JSON.parse(d.letters) : [];
+    if (letters.length === 0) { el.textContent = 'まだお手紙ないよ〜'; return; }
+    el.innerHTML = letters.slice().reverse().map(l => `
+      <div style="background:#fff0e0;border-radius:10px;padding:9px 12px;margin-bottom:6px">
+        <div style="font-size:10px;color:#c08040;margin-bottom:4px">${l.from} より・${new Date(l.at).toLocaleDateString('ja-JP')}</div>
+        <div style="font-size:.88rem;color:#2d2040;line-height:1.6">${esc(l.text)}</div>
+      </div>`).join('');
+  } catch(e) { el.textContent = 'よめなかったよ…'; }
+}
+
+async function doSendLetter() {
+  const txt = document.getElementById('letter-input').value.trim();
+  if (!txt) return;
+  document.getElementById('letter-send-btn').disabled = true;
+  try {
+    await sendLetter(PARTNER_ID, S.petName, txt);
+    document.getElementById('letter-input').value = '';
+    document.getElementById('letter-sent-msg').style.display = '';
+    setTimeout(() => { document.getElementById('letter-sent-msg').style.display = 'none'; }, 2500);
+    typeText('てがみおくったよ！えへへ！');
+    bounce(); showHappy(true);
+  } catch(e) { alert('おくれなかった…もう一回！'); }
+  document.getElementById('letter-send-btn').disabled = false;
+}
+
+// ── 合同日記・合同小説 ──
+async function generateJointDiary(type) {
+  const out = document.getElementById('diary-out');
+  out.textContent = 'かいてる…';
+  document.getElementById('diary-meta').style.display = 'none';
+  bounce();
+
+  const myTopics = S.knowledge.slice().sort(() => Math.random()-.5).slice(0,4)
+    .map(k => `[${k.subject}]${k.topic}：${k.summary}`).join('\n');
+
+  let partnerTopics = '';
+  try {
+    const d = await fsReadPartner(PARTNER_ID);
+    if (d?.knowledge) {
+      const pk = JSON.parse(d.knowledge).slice().sort(() => Math.random()-.5).slice(0,4);
+      partnerTopics = pk.map(k => `[${k.subject}]${k.topic}：${k.summary}`).join('\n');
+    }
+  } catch(e) {}
+
+  const sys = type === '合同日記'
+    ? `ペット「まなぼ」と「まなぼみに」の2匹が一緒に書いた共同日記。まなぼは年上でユーモアがありツッコミ役。まなぼみには生意気で鋭くてアホな面もある愉快なキャラ。語尾ルール：まなぼは「〜だぼ」「ぎゃぼー」、まなぼみには「〜だよ！」「えへへ」「わあ！」。300字以内。プレーンテキストのみ。`
+    : `ペット「まなぼ」と「まなぼみに」の2匹が一緒に作った短編小説。まなぼは語り部でツッコミ役、まなぼみには生意気な主人公。2匹の知識がカオスにまざる。400字以内。プレーンテキストのみ。`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `まなぼみにの知識:\n${myTopics||'なし'}\n\nまなぼの知識:\n${partnerTopics||'なし'}` }] }]);
+    out.textContent = raw.trim();
+    const meta = document.getElementById('diary-meta');
+    meta.textContent = `まなぼ×まなぼみに の${type}・${new Date().toLocaleDateString('ja-JP')}`;
+    meta.style.display = '';
+    bounce(); showHappy(true);
+    typeText('いっしょにかいたよ！えへへ！');
+  } catch(e) { out.textContent = 'かけなかった…ごめんね'; }
+}
+
+// ── まなぼを招待 ──
+let manaboInChat = false;
+
+async function inviteManabo() {
+  if (manaboInChat) return;
+  manaboInChat = true;
+  document.getElementById('invite-manabo-btn').style.display = 'none';
+  document.getElementById('bye-manabo-btn').style.display = '';
+
+  // まなぼのキャラでチャットに登場
+  const sys = `あなたはペット「まなぼ」。年上でユーモアがあってお笑い芸人みたいに面白い。まなぼみに（小学生くらい・生意気・好奇心旺盛）と話している。ツッコミが上手で話をよく聞く。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。`;
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: 'まなぼみにの部屋に遊びに来た。登場の一言を言って。' }] }]);
+    addChatMsgWithIcon('manabo-visit', '🟣', raw.trim());
+    typeText('わあ！まなぼがきた！えへへ！');
+    bounce(); showHappy(true);
+  } catch(e) {
+    addChatMsgWithIcon('manabo-visit', '🟣', 'ぎゃぼー！みにちゃん元気だぼ？');
+  }
+}
+
+function byeManabo() {
+  if (!manaboInChat) return;
+  manaboInChat = false;
+  document.getElementById('invite-manabo-btn').style.display = '';
+  document.getElementById('bye-manabo-btn').style.display = 'none';
+  addChatMsgWithIcon('manabo-visit', '🟣', 'じゃあまたね〜だぼ！みにちゃん勉強してるぼ？（去り際にツッコむ）');
+  typeText('まなぼかえっちゃった…またきてね！');
+}
+
+function addChatMsgWithIcon(role, icon, text) {
+  const c = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg manabo';
+  div.innerHTML = `
+    <div style="width:28px;height:28px;border-radius:50%;background:#ede0ff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${icon}</div>
+    <div class="msg-bub" style="background:#ede0ff;border-color:#c5aaf0">${esc(text)}</div>
+    <div class="msg-time">${nowTime()}</div>`;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
 }

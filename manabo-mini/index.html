@@ -70,204 +70,89 @@
 
     <!-- PET -->
     <div id="pet-area">
-      <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible">
-        <defs>
-          <radialGradient id="mg" cx="50%" cy="42%" r="55%">
-            <stop offset="0%" stop-color="#ede0ff"/>
-            <stop offset="100%" stop-color="#c5aaf0"/>
-          </radialGradient>
-          <radialGradient id="blush" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#f9b8c8" stop-opacity="0.8"/>
-            <stop offset="100%" stop-color="#f9b8c8" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-
-        <!-- 全体を包むグループ（ジャンプ・震え用） -->
+      <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible;cursor:pointer">
         <g id="pet-root">
 
-          <!-- 影（ジャンプで縮む） -->
-          <ellipse id="shadow-e" cx="80" cy="125" rx="28" ry="5" fill="#c8b0e8" opacity="0.25"/>
-
-          <!-- 左手（パタパタ用） -->
-          <ellipse id="arm-l" cx="36" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(-30,36,95)"/>
-          <!-- 右手（パタパタ用） -->
-          <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(30,124,95)"/>
-
-          <!-- 体 -->
-          <ellipse id="body-e" cx="80" cy="85" rx="44" ry="42" fill="url(#mg)"/>
-
-          <!-- 耳グループ（形変更用） -->
-          <g id="ear-g">
-            <ellipse id="ear-l" cx="48"  cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(-15,48,53)"/>
-            <ellipse id="ear-l-in" cx="50"  cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(-15,50,54)"/>
-            <ellipse id="ear-r" cx="112" cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(15,112,53)"/>
-            <ellipse id="ear-r-in" cx="110" cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(15,110,54)"/>
-          </g>
-
-          <!-- 顔ベース -->
-          <ellipse id="face-e" cx="80" cy="82" rx="35" ry="32" fill="#ede0ff"/>
-
-          <!-- 目（通常） -->
-          <g id="eyes-g">
-            <ellipse id="eye-l" cx="67" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
-            <circle  cx="69" cy="73.5" r="1.4" fill="white"/>
-            <ellipse id="eye-r" cx="93" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
-            <circle  cx="95" cy="73.5" r="1.4" fill="white"/>
-          </g>
-
-          <!-- まばたき -->
-          <g id="blink-g" style="display:none">
-            <rect x="62" y="74" width="10" height="3" rx="1.5" fill="#3a2e4a"/>
-            <rect x="88" y="74" width="10" height="3" rx="1.5" fill="#3a2e4a"/>
-          </g>
-
-          <!-- びっくり目 -->
-          <g id="surprise-g" style="display:none">
-            <ellipse cx="67" cy="75" rx="6" ry="7" fill="#3a2e4a"/>
-            <circle  cx="69" cy="73" r="1.8" fill="white"/>
-            <ellipse cx="93" cy="75" rx="6" ry="7" fill="#3a2e4a"/>
-            <circle  cx="95" cy="73" r="1.8" fill="white"/>
-          </g>
-
-          <!-- 細目（うれしい） -->
-          <g id="happy-eye-g" style="display:none">
-            <path d="M62 75 Q67 70 72 75" stroke="#3a2e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-            <path d="M88 75 Q93 70 98 75" stroke="#3a2e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          </g>
-
-          <!-- 鼻 -->
-          <ellipse id="nose-e" cx="80" cy="83" rx="2.2" ry="1.8" fill="#b09ad4"/>
-
-          <!-- 口 -->
-          <path id="mouth-p" d="M77 87 Q80 91 83 87"
-                stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          <ellipse id="mouth-open" cx="80" cy="89" rx="3.5" ry="2.5" fill="#c5aaf0" style="display:none"/>
-
-          <!-- ほっぺ -->
-          <ellipse id="blush-l" cx="60"  cy="87" rx="10" ry="6" fill="url(#blush)"/>
-          <ellipse id="blush-r" cx="100" cy="87" rx="10" ry="6" fill="url(#blush)"/>
-
-          <!-- しっぽ -->
-          <g id="tail-g">
-            <ellipse id="tail-e" cx="120" cy="104" rx="8" ry="6" fill="#daccf7" transform="rotate(25,120,104)"/>
-          </g>
-
-          <!-- 🎀 リボン -->
-          <g id="ribbon-g" style="display:none">
-            <polygon points="48,42 56,48 48,54" fill="#f97cb0" opacity="0.9"/>
-            <polygon points="64,42 56,48 64,54" fill="#f97cb0" opacity="0.9"/>
-            <circle cx="56" cy="48" r="3.5" fill="#fb9cc8"/>
-          </g>
-          <!-- 🌸 花 -->
-          <g id="flower-g" style="display:none">
-            <circle cx="80" cy="38" r="5" fill="#ffe066"/>
-            <ellipse cx="80" cy="28" rx="4" ry="6" fill="#ff9ec8"/>
-            <ellipse cx="80" cy="48" rx="4" ry="6" fill="#ff9ec8"/>
-            <ellipse cx="70" cy="38" rx="6" ry="4" fill="#ff9ec8"/>
-            <ellipse cx="90" cy="38" rx="6" ry="4" fill="#ff9ec8"/>
-            <ellipse cx="73" cy="31" rx="4" ry="6" fill="#ffb8d8" transform="rotate(45,73,31)"/>
-            <ellipse cx="87" cy="31" rx="4" ry="6" fill="#ffb8d8" transform="rotate(-45,87,31)"/>
-            <ellipse cx="73" cy="45" rx="4" ry="6" fill="#ffb8d8" transform="rotate(-45,73,45)"/>
-            <ellipse cx="87" cy="45" rx="4" ry="6" fill="#ffb8d8" transform="rotate(45,87,45)"/>
-            <circle cx="80" cy="38" r="5" fill="#ffe066"/>
-          </g>
-          <!-- 🦋 ちょうちょ -->
-          <g id="butterfly-g" style="display:none">
-            <ellipse cx="68" cy="38" rx="10" ry="7" fill="#b388ff" opacity="0.85" transform="rotate(-20,68,38)"/>
-            <ellipse cx="92" cy="38" rx="10" ry="7" fill="#b388ff" opacity="0.85" transform="rotate(20,92,38)"/>
-            <ellipse cx="70" cy="46" rx="7" ry="5" fill="#ce93d8" opacity="0.8" transform="rotate(15,70,46)"/>
-            <ellipse cx="90" cy="46" rx="7" ry="5" fill="#ce93d8" opacity="0.8" transform="rotate(-15,90,46)"/>
-            <ellipse cx="80" cy="41" rx="2" ry="7" fill="#5c3d8f"/>
-            <line x1="80" y1="34" x2="73" y2="28" stroke="#5c3d8f" stroke-width="1.5"/>
-            <line x1="80" y1="34" x2="87" y2="28" stroke="#5c3d8f" stroke-width="1.5"/>
-            <circle cx="73" cy="28" r="2" fill="#5c3d8f"/>
-            <circle cx="87" cy="28" r="2" fill="#5c3d8f"/>
-          </g>
-          <!-- 👑 王冠 -->
-          <g id="crown-g" style="display:none">
-            <polygon points="58,50 63,35 70,45 80,30 90,45 97,35 102,50" fill="#ffd700" stroke="#e0a800" stroke-width="1.5" stroke-linejoin="round"/>
-            <rect x="58" y="48" width="44" height="8" rx="3" fill="#ffd700" stroke="#e0a800" stroke-width="1"/>
-            <circle cx="80" cy="32" r="3.5" fill="#ff4d6d"/>
-            <circle cx="64" cy="42" r="2.5" fill="#4fc3f7"/>
-            <circle cx="96" cy="42" r="2.5" fill="#4fc3f7"/>
-          </g>
-          <!-- 👓 メガネ（丸） -->
-          <g id="glasses-g" style="display:none">
-            <rect x="58" y="70" width="18" height="13" rx="5" fill="none" stroke="#7c5cbf" stroke-width="2"/>
-            <rect x="84" y="70" width="18" height="13" rx="5" fill="none" stroke="#7c5cbf" stroke-width="2"/>
-            <line x1="76" y1="76" x2="84" y2="76" stroke="#7c5cbf" stroke-width="2"/>
-            <line x1="58" y1="76" x2="55" y2="74" stroke="#7c5cbf" stroke-width="2"/>
-            <line x1="102" y1="76" x2="105" y2="74" stroke="#7c5cbf" stroke-width="2"/>
-          </g>
-          <!-- 🤓 メガネ（四角） -->
-          <g id="glasses2-g" style="display:none">
-            <rect x="57" y="69" width="20" height="14" rx="2" fill="none" stroke="#3a2e4a" stroke-width="2.2"/>
-            <rect x="83" y="69" width="20" height="14" rx="2" fill="none" stroke="#3a2e4a" stroke-width="2.2"/>
-            <line x1="77" y1="76" x2="83" y2="76" stroke="#3a2e4a" stroke-width="2"/>
-            <line x1="57" y1="75" x2="53" y2="73" stroke="#3a2e4a" stroke-width="2"/>
-            <line x1="103" y1="75" x2="107" y2="73" stroke="#3a2e4a" stroke-width="2"/>
-          </g>
-          <!-- 😎 サングラス（黒） -->
-          <g id="sunglass1-g" style="display:none">
-            <rect x="56" y="70" width="22" height="12" rx="6" fill="#1a1a2e" opacity="0.9"/>
-            <rect x="82" y="70" width="22" height="12" rx="6" fill="#1a1a2e" opacity="0.9"/>
-            <line x1="78" y1="76" x2="82" y2="76" stroke="#555" stroke-width="2"/>
-            <line x1="56" y1="75" x2="52" y2="73" stroke="#555" stroke-width="2"/>
-            <line x1="104" y1="75" x2="108" y2="73" stroke="#555" stroke-width="2"/>
-          </g>
-          <!-- 💕 サングラス（ハート） -->
-          <g id="sunglass2-g" style="display:none">
-            <!-- 左レンズ（ハート形） -->
-            <path d="M67,72 Q67,67 71,67 Q75,67 75,72 Q75,77 67,82 Q59,77 59,72 Q59,67 63,67 Q67,67 67,72Z" fill="#ff4d6d" opacity="0.88"/>
-            <!-- 右レンズ（ハート形） -->
-            <path d="M93,72 Q93,67 97,67 Q101,67 101,72 Q101,77 93,82 Q85,77 85,72 Q85,67 89,67 Q93,67 93,72Z" fill="#ff4d6d" opacity="0.88"/>
-            <line x1="75" y1="74" x2="85" y2="74" stroke="#ff4d6d" stroke-width="2"/>
-            <line x1="59" y1="73" x2="55" y2="71" stroke="#ff4d6d" stroke-width="2"/>
-            <line x1="101" y1="73" x2="105" y2="71" stroke="#ff4d6d" stroke-width="2"/>
-          </g>
-          <!-- 🕶 サングラス（ミラー） -->
-          <g id="sunglass3-g" style="display:none">
-            <rect x="56" y="70" width="22" height="11" rx="5" fill="#4fc3f7" opacity="0.85"/>
-            <rect x="82" y="70" width="22" height="11" rx="5" fill="#4fc3f7" opacity="0.85"/>
-            <rect x="56" y="70" width="22" height="4" rx="3" fill="white" opacity="0.3"/>
-            <rect x="82" y="70" width="22" height="4" rx="3" fill="white" opacity="0.3"/>
-            <line x1="78" y1="75" x2="82" y2="75" stroke="#29b6f6" stroke-width="2"/>
-            <line x1="56" y1="74" x2="52" y2="72" stroke="#29b6f6" stroke-width="2"/>
-            <line x1="104" y1="74" x2="108" y2="72" stroke="#29b6f6" stroke-width="2"/>
-          </g>
-          <!-- 🎩 トップハット -->
-          <g id="hat-g" style="display:none">
-            <ellipse cx="80" cy="47" rx="24" ry="5" fill="#2d2040"/>
-            <rect x="66" y="25" width="28" height="23" rx="3" fill="#2d2040"/>
-            <rect x="64" y="43" width="32" height="5" rx="2" fill="#3a2e4a"/>
-            <rect x="70" y="29" width="20" height="5" rx="2" fill="#c5aaf0" opacity="0.3"/>
-          </g>
-          <!-- ⭐ 星のかざり -->
-          <g id="star-g" style="display:none">
-            <polygon points="80,24 83,33 93,33 85,39 88,48 80,42 72,48 75,39 67,33 77,33" fill="#ffe066" stroke="#f0b800" stroke-width="1"/>
-          </g>
-          <!-- 🎵 アフロ -->
-          <g id="afro-g" style="display:none">
-            <circle cx="80" cy="28" r="30" fill="#3d2b1f"/>
-            <circle cx="60" cy="35" r="12" fill="#3d2b1f"/>
-            <circle cx="100" cy="35" r="12" fill="#3d2b1f"/>
-            <circle cx="70" cy="20" r="10" fill="#4a3428"/>
-            <circle cx="90" cy="20" r="10" fill="#4a3428"/>
-            <circle cx="80" cy="15" r="9" fill="#4a3428"/>
-          </g>
-
-          <!-- ハッピースター -->
-          <g id="happy-g" style="display:none">
-            <text x="24"  y="48" font-size="14" opacity="0.7" fill="#c5aaf0">✦</text>
-            <text x="118" y="44" font-size="10" opacity="0.6" fill="#c5aaf0">✦</text>
-          </g>
-
-          <!-- zzz -->
-          <g id="zzz-g" style="display:none">
-            <text x="118" y="64" font-size="10" fill="#c5aaf0" opacity="0.8">z</text>
-            <text x="126" y="54" font-size="13" fill="#c5aaf0" opacity="0.55">z</text>
-            <text x="135" y="42" font-size="16" fill="#c5aaf0" opacity="0.35">z</text>
-          </g>
+  <defs>
+    <radialGradient id="mg2" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#fff0e0"/>
+      <stop offset="100%" stop-color="#ffb870"/>
+    </radialGradient>
+    <radialGradient id="blush2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffb8a0" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffb8a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- 影 -->
+  <ellipse cx="80" cy="125" rx="28" ry="5" fill="#e8a060" opacity="0.25"/>
+  <!-- 腕 -->
+  <ellipse id="arm-l" cx="36" cy="95" rx="9" ry="6" fill="#ffcc90" transform="rotate(-30,36,95)"/>
+  <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#ffcc90" transform="rotate(30,124,95)"/>
+  <!-- 体 -->
+  <ellipse cx="80" cy="85" rx="44" ry="42" fill="url(#mg2)"/>
+  <!-- 耳（まるい） -->
+  <ellipse cx="48" cy="53" rx="12" ry="15" fill="#ffcc90" transform="rotate(-15,48,53)"/>
+  <ellipse cx="50" cy="54" rx="5.5" ry="8" fill="#ffb8c0" transform="rotate(-15,50,54)"/>
+  <ellipse cx="112" cy="53" rx="12" ry="15" fill="#ffcc90" transform="rotate(15,112,53)"/>
+  <ellipse cx="110" cy="54" rx="5.5" ry="8" fill="#ffb8c0" transform="rotate(15,110,54)"/>
+  <!-- 顔 -->
+  <ellipse cx="80" cy="82" rx="35" ry="32" fill="#fff0e0"/>
+  <!-- 目 -->
+  <g id="eyes-g">
+    <ellipse cx="67" cy="75" rx="5" ry="5.5" fill="#6a3a2a"/>
+    <circle cx="69" cy="73.5" r="1.4" fill="white"/>
+    <ellipse cx="93" cy="75" rx="5" ry="5.5" fill="#6a3a2a"/>
+    <circle cx="95" cy="73.5" r="1.4" fill="white"/>
+  </g>
+  <!-- まばたき -->
+  <g id="blink-g" style="display:none">
+    <rect x="62" y="74" width="10" height="3" rx="1.5" fill="#6a3a2a"/>
+    <rect x="88" y="74" width="10" height="3" rx="1.5" fill="#6a3a2a"/>
+  </g>
+  <!-- びっくり目 -->
+  <g id="surprise-g" style="display:none">
+    <ellipse cx="67" cy="75" rx="6" ry="7" fill="#6a3a2a"/>
+    <circle cx="69" cy="73" r="1.8" fill="white"/>
+    <ellipse cx="93" cy="75" rx="6" ry="7" fill="#6a3a2a"/>
+    <circle cx="95" cy="73" r="1.8" fill="white"/>
+  </g>
+  <!-- 細目 -->
+  <g id="happy-eye-g" style="display:none">
+    <path d="M62 75 Q67 70 72 75" stroke="#6a3a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M88 75 Q93 70 98 75" stroke="#6a3a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- 鼻 -->
+  <ellipse cx="80" cy="83" rx="2.2" ry="1.8" fill="#e09060"/>
+  <!-- 口 -->
+  <path id="mouth-p" d="M77 87 Q80 91 83 87" stroke="#e09060" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <ellipse id="mouth-open" cx="80" cy="89" rx="3.5" ry="2.5" fill="#ffb870" style="display:none"/>
+  <!-- ほっぺ -->
+  <ellipse cx="60" cy="87" rx="10" ry="6" fill="url(#blush2)"/>
+  <ellipse cx="100" cy="87" rx="10" ry="6" fill="url(#blush2)"/>
+  <!-- しっぽ -->
+  <g id="tail-g">
+    <ellipse id="tail-e" cx="120" cy="104" rx="8" ry="6" fill="#ffcc90" transform="rotate(25,120,104)"/>
+  </g>
+  <!-- 星かざり（まなぼみにのトレードマーク） -->
+  <g id="ribbon-g" style="display:none"/>
+  <g id="flower-g" style="display:none"/>
+  <g id="butterfly-g" style="display:none"/>
+  <g id="crown-g" style="display:none"/>
+  <g id="star-g">
+    <polygon points="80,24 83,33 93,33 85,39 88,48 80,42 72,48 75,39 67,33 77,33" fill="#ffe066" stroke="#f0b800" stroke-width="1"/>
+  </g>
+  <g id="glasses-g" style="display:none"/>
+  <g id="glasses2-g" style="display:none"/>
+  <g id="sunglass1-g" style="display:none"/>
+  <g id="sunglass2-g" style="display:none"/>
+  <g id="sunglass3-g" style="display:none"/>
+  <g id="hat-g" style="display:none"/>
+  <g id="afro-g" style="display:none"/>
+  <!-- ハッピースター -->
+  <g id="happy-g" style="display:none">
+    <text x="24" y="48" font-size="14" opacity="0.7" fill="#ffb870">✦</text>
+    <text x="118" y="44" font-size="10" opacity="0.6" fill="#ffb870">✦</text>
+  </g>
 
         </g><!-- /pet-root -->
       </svg>
@@ -297,8 +182,14 @@
       <!-- CHAT -->
       <div class="panel active" id="chat-panel">
         <div id="chat-msgs"></div>
+        <div style="display:flex;gap:6px;padding:6px 12px 0;background:var(--white)">
+          <button id="invite-manabo-btn" onclick="inviteManabo()"
+            style="font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #c5aaf0;background:#ede0ff;color:#7c5cbf;cursor:pointer;font-family:inherit;white-space:nowrap">🟣 まなぼをよぶ</button>
+          <button id="bye-manabo-btn" onclick="byeManabo()"
+            style="display:none;font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #c5aaf0;background:#c5aaf0;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">🟣 さようなら</button>
+        </div>
         <div id="chat-bar">
-          <input id="chat-input" type="text" placeholder="まなぼに話しかける…"
+          <input id="chat-input" type="text" placeholder="まなぼみにに話しかける…"
                  autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()"/>
           <button id="chat-send" onclick="sendChat()">↑</button>
         </div>
@@ -337,10 +228,12 @@
         <div class="diary-scroll">
           <div class="sec-title">まなぼに書かせる</div>
           <div class="diary-grid">
-            <button class="diary-btn" onclick="generateDiary('日記')">📔 今日の日記</button>
-            <button class="diary-btn" onclick="generateDiary('小説')">📖 短編小説</button>
-            <button class="diary-btn" onclick="generateDiary('発表')">🎤 授業で発表</button>
-            <button class="diary-btn" onclick="generateDiary('詩')">🌸 詩を書く</button>
+            <button class="diary-btn" onclick="generateDiary('日記')">📔 にっき</button>
+            <button class="diary-btn" onclick="generateDiary('小説')">📖 おはなし</button>
+            <button class="diary-btn" onclick="generateDiary('発表')">🎤 はっぴょう</button>
+            <button class="diary-btn" onclick="generateDiary('詩')">🌸 うた</button>
+            <button class="diary-btn" onclick="generateJointDiary('合同日記')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📔 まなぼといっしょに</button>
+            <button class="diary-btn" onclick="generateJointDiary('合同小説')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📖 おはなしいっしょに</button>
           </div>
           <div id="diary-meta" class="diary-meta" style="display:none"></div>
           <div class="diary-out" id="diary-out" style="color:#b0a0cc">（まなぼが書くよ）</div>
@@ -410,7 +303,11 @@
     <button class="d-btn" onclick="saveApiKey()">保存する</button>
   </div>
   <div class="d-sec">
-    <div class="d-lbl">🐾 まなぼのパーソナライズ</div>
+    <div class="d-lbl">✉ まなぼへ</div>
+    <button class="d-btn" onclick="openLetterModal();closeDrawer()">おてがみをかく・よむ</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">🐾 まなぼみにのカスタマイズ</div>
     <button class="d-btn" onclick="openPersonalize()">まなぼをカスタマイズする</button>
   </div>
   <div class="d-sec">
@@ -540,9 +437,27 @@
   </div>
 </div>
 
+<!-- お手紙モーダル -->
+<div id="letter-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;max-height:85vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">✉ まなぼへおてがみ</h3>
+      <button onclick="closeLetterModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼにおくる</div>
+    <textarea id="letter-input" rows="3" placeholder="まなぼへのメッセージだよ！"
+      style="padding:10px;border:1.5px solid #ffd0a0;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fff8f0;outline:none;resize:none;line-height:1.6"></textarea>
+    <button id="letter-send-btn" onclick="doSendLetter()"
+      style="padding:12px;background:#ffb870;color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer">おくる ✉</button>
+    <div id="letter-sent-msg" style="display:none;font-size:.82rem;color:#4caf7d;text-align:center">✓ おくったよ！えへへ！</div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em;margin-top:4px">もらったおてがみ</div>
+    <div id="letter-received" style="font-size:.82rem;color:#b0a0cc">読み込み中…</div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
