@@ -1578,10 +1578,12 @@ JSON形式のみ:
           at: Date.now(),
         });
       });
+      const prevLv = S.kouryuLv;
       S.kouryuLv = S.omiyage.length;
       await saveState();
       showToast(`🎁 おみやげ！${items.length}こ とどいたよ！`);
       typeText(`わあ！まなぼとはなしてひらめいたよ！えへへ！`);
+      checkKouryuUnlock(prevLv, S.kouryuLv);
     }
   } catch(e) { console.warn('omiyage error', e); }
 }
@@ -1615,10 +1617,14 @@ JSON形式のみ:
           S.omiyage.push({ id: crypto.randomUUID(), topic: item.topic, insight: item.insight, from: item.from || '手紙', at: Date.now() });
         }
       });
+      const prevLv = S.kouryuLv;
       S.kouryuLv = S.omiyage.length;
       await saveState();
       renderKnowledge();
-      if (items.length > 0) showToast(`💌 てがみからひらめき ${items.length}こ とどいたよ！`);
+      if (items.length > 0) {
+        showToast(`💌 てがみからひらめき ${items.length}こ とどいたよ！`);
+        checkKouryuUnlock(prevLv, S.kouryuLv);
+      }
     }
   } catch(e) { console.warn('letter omiyage error', e); }
 }
@@ -1655,4 +1661,21 @@ async function forceRefresh() {
   } catch(e) {
     showToast('⚠ よみこめなかった…もう一かいおしてね！');
   }
+}
+
+// ── 交流レベル解放通知 ──
+function checkKouryuUnlock(prevLv, newLv) {
+  const unlocks = [
+    { at: 3,  msg: '✨ ひらめきにっき（しょきゅう）がかけるようになったよ！にっきタブからかけるよ！' },
+    { at: 10, msg: '🌟 ひらめきにっき（ちゅうきゅう）になったよ！もっとすごいひらめきがかけるよ！' },
+    { at: 20, msg: '💫 ひらめきにっき（じょうきゅう）になったよ！さいきょうのひらめきがかけるよ！' },
+  ];
+  unlocks.forEach(u => {
+    if (prevLv < u.at && newLv >= u.at) {
+      setTimeout(() => {
+        document.getElementById('lv-msg').textContent = u.msg;
+        document.getElementById('lv-overlay').classList.add('show');
+      }, 1500);
+    }
+  });
 }
