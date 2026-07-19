@@ -1411,6 +1411,7 @@ async function loadReceivedLetters() {
         <div style="font-size:10px;color:#c08040;margin-bottom:4px">${l.from} より・${new Date(l.at).toLocaleDateString('ja-JP')}</div>
         <div style="font-size:.88rem;color:#2d2040;line-height:1.6">${esc(l.text)}</div>
       </div>`).join('');
+    await generateOmiyageFromLetter(letters.slice(-3));
   } catch(e) { el.textContent = 'よめなかったよ…'; }
 }
 
@@ -1420,11 +1421,13 @@ async function doSendLetter() {
   document.getElementById('letter-send-btn').disabled = true;
   try {
     await sendLetter(PARTNER_ID, S.petName, txt);
+    const sentText = txt;
     document.getElementById('letter-input').value = '';
     document.getElementById('letter-sent-msg').style.display = '';
     setTimeout(() => { document.getElementById('letter-sent-msg').style.display = 'none'; }, 2500);
     typeText('てがみおくったよ！えへへ！');
     bounce(); showHappy(true);
+    await generateOmiyageFromLetter([{ from: S.petName, text: sentText }]);
   } catch(e) { alert('おくれなかった…もう一回！'); }
   document.getElementById('letter-send-btn').disabled = false;
 }
@@ -1566,4 +1569,63 @@ function addChatMsgWithIcon(role, icon, text) {
     <div class="msg-time">${nowTime()}</div>`;
   c.appendChild(div);
   c.scrollTop = c.scrollHeight;
+}
+
+// ── お手紙からおみやげ知識を生成 ──
+async function generateOmiyageFromLetter(letters) {
+  if (!letters || letters.length === 0) return;
+  const latestLetters = letters.slice(-3).map(l => `${l.from}：${l.text}`).join('\n');
+  const sys = `お手紙の内容から「気づき・発見・ひらめき」を0〜2個抽出してください。
+JSON形式のみ:
+[{"topic":"（気づきの短いタイトル）","insight":"（どんな気づきか1文、ひらがなメイン）","from":"手紙"}]
+何もなければ空配列 [] を返す。`;
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `お手紙:\n${latestLetters}` }] }]);
+    const items = parseJSON(raw);
+    if (Array.isArray(items) && items.length > 0) {
+      items.forEach(item => {
+        if (!S.omiyage.some(o => o.topic === item.topic)) {
+          S.omiyage.push({ id: crypto.randomUUID(), topic: item.topic, insight: item.insight, from: item.from || '手紙', at: Date.now() });
+        }
+      });
+      S.kouryuLv = S.omiyage.length;
+      await saveState();
+      renderKnowledge();
+      if (items.length > 0) showToast(`💌 てがみからひらめき ${items.length}こ とどいたよ！`);
+    }
+  } catch(e) { console.warn('letter omiyage error', e); }
+}
+
+// ── Firebase強制リフレッシュ ──
+async function forceRefresh() {
+  showToast('🔄 さいしんデータをよみこんでるよ…');
+  try {
+    const db = getDB();
+    const snap = await db.collection('manabo').doc(MANABO_ID).get({ source: 'server' });
+    if (snap.exists) {
+      const d = snap.data();
+      S.level    = d.level    || S.level;
+      S.xp       = d.xp       || S.xp;
+      S.xpMax    = d.xpMax    || S.xpMax;
+      S.knowledge = d.knowledge ? JSON.parse(d.knowledge).map(k => ({
+        id: k.id || crypto.randomUUID(), subject: k.subject || 'にちじょう',
+        topic: k.topic || '', summary: k.summary || '',
+        misunderstanding: k.misunderstanding || '',
+        createdAt: k.createdAt || Date.now(), secret: k.secret || false,
+      })) : S.knowledge;
+      S.gobi     = d.gobi    ? JSON.parse(d.gobi) : S.gobi;
+      S.omiyage  = d.omiyage  ? JSON.parse(d.omiyage) : S.omiyage;
+      S.kouryuLv = d.kouryuLv || S.kouryuLv;
+      S.petName  = d.petName  || S.petName;
+      S.persona  = d.persona  || S.persona;
+      if (d.appearance) try { Object.assign(S.appearance, JSON.parse(d.appearance)); } catch(_) {}
+    }
+    updateHeader();
+    renderKnowledge();
+    applyAppearance();
+    showToast('✓ さいしんにしたよ！えへへ！');
+    typeText('わあ！あたらしくなったよ！えへへ！');
+  } catch(e) {
+    showToast('⚠ よみこめなかった…もう一かいおしてね！');
+  }
 }
