@@ -1229,3 +1229,163 @@ function applyTail() {
   const svgStr = (TAIL_SHAPES[shape] || TAIL_SHAPES.normal).replace(/COLOR/g, color);
   tg.innerHTML = svgStr;
 }
+
+// ── 連携機能（まなぼ↔まなぼみに） ──
+// Firebase REST APIで相手のドキュメントを読み書き
+const PARTNER_ID = 'mini-shared'; // まなぼから見た相手
+const MY_ID = 'shared';
+
+async function fsWritePartner(docId, data) {
+  const db = getDB();
+  const snap = await db.collection('manabo').doc(docId).get();
+  const existing = snap.exists ? snap.data() : {};
+  await db.collection('manabo').doc(docId).set({ ...existing, ...data });
+}
+
+async function fsReadPartner(docId) {
+  const db = getDB();
+  const snap = await db.collection('manabo').doc(docId).get();
+  return snap.exists ? snap.data() : null;
+}
+
+// ── お手紙機能 ──
+async function sendLetter(toId, fromName, text) {
+  const d = await fsReadPartner(toId) || {};
+  const letters = d.letters ? JSON.parse(d.letters) : [];
+  letters.push({ from: fromName, text, at: Date.now() });
+  // 最新10件だけ保持
+  if (letters.length > 10) letters.splice(0, letters.length - 10);
+  await fsWritePartner(toId, { letters: JSON.stringify(letters) });
+}
+
+async function openLetterModal() {
+  document.getElementById('letter-modal').style.display = 'flex';
+  // 受信したお手紙を読む
+  await loadReceivedLetters();
+}
+
+function closeLetterModal() {
+  document.getElementById('letter-modal').style.display = 'none';
+}
+
+async function loadReceivedLetters() {
+  const el = document.getElementById('letter-received');
+  el.textContent = '読み込み中…';
+  try {
+    const d = await fsReadPartner(MY_ID) || {};
+    const letters = d.letters ? JSON.parse(d.letters) : [];
+    if (letters.length === 0) {
+      el.textContent = 'まだお手紙はないよ';
+      return;
+    }
+    el.innerHTML = letters.slice().reverse().map(l => `
+      <div style="background:#f0e8ff;border-radius:10px;padding:9px 12px;margin-bottom:6px">
+        <div style="font-size:10px;color:#b0a0cc;margin-bottom:4px">${l.from} より・${new Date(l.at).toLocaleDateString('ja-JP')}</div>
+        <div style="font-size:.88rem;color:#2d2040;line-height:1.6">${esc(l.text)}</div>
+      </div>`).join('');
+  } catch(e) {
+    el.textContent = '読み込めなかったよ…';
+  }
+}
+
+async function doSendLetter() {
+  const txt = document.getElementById('letter-input').value.trim();
+  if (!txt) return;
+  document.getElementById('letter-send-btn').disabled = true;
+  try {
+    await sendLetter(PARTNER_ID, S.petName, txt);
+    document.getElementById('letter-input').value = '';
+    document.getElementById('letter-sent-msg').style.display = '';
+    setTimeout(() => { document.getElementById('letter-sent-msg').style.display = 'none'; }, 2500);
+    typeText('てがみ、おくったぼ！よんでくれるかな！');
+    bounce(); showHappy(true);
+  } catch(e) {
+    alert('おくれなかった…もう一回試して');
+  }
+  document.getElementById('letter-send-btn').disabled = false;
+}
+
+// ── 合同日記・合同小説 ──
+async function generateJointDiary(type) {
+  const out = document.getElementById('diary-out');
+  out.textContent = '書いてる…';
+  document.getElementById('diary-meta').style.display = 'none';
+  bounce();
+
+  // 自分の知識
+  const myTopics = S.knowledge.slice().sort(() => Math.random()-.5).slice(0,4)
+    .map(k => `[${k.subject}]${k.topic}：${k.summary}`).join('\n');
+
+  // 相手の知識を取得
+  let partnerTopics = '';
+  try {
+    const d = await fsReadPartner(PARTNER_ID);
+    if (d?.knowledge) {
+      const pk = JSON.parse(d.knowledge).slice().sort(() => Math.random()-.5).slice(0,4);
+      partnerTopics = pk.map(k => `[${k.subject}]${k.topic}：${k.summary}`).join('\n');
+    }
+  } catch(e) {}
+
+  const sys = type === '合同日記'
+    ? `ペット「まなぼ」と「まなぼみに」の2匹が一緒に書いた共同日記。2匹が交互に話しながらズレた知識を混ぜる。まなぼは年上でユーモアがありツッコミ役。まなぼみには生意気で鋭くてアホな面もある。語尾ルール：まなぼは「〜だぼ」「ぎゃぼー」、まなぼみには「〜だよ！」「えへへ」「わあ！」。300字以内。プレーンテキストのみ。`
+    : `ペット「まなぼ」と「まなぼみに」の2匹が一緒に作った短編小説。まなぼは語り部でツッコミ役、まなぼみには主人公で生意気。2匹の知識がカオスにまざる。400字以内。プレーンテキストのみ。`;
+
+  const userMsg = `まなぼの知識:\n${myTopics || 'なし'}\n\nまなぼみにの知識:\n${partnerTopics || 'なし'}`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
+    out.textContent = raw.trim();
+    const meta = document.getElementById('diary-meta');
+    meta.textContent = `まなぼ×まなぼみに の${type}・${new Date().toLocaleDateString('ja-JP')}`;
+    meta.style.display = '';
+    bounce(); showHappy(true);
+    typeText(type === '合同日記' ? 'いっしょにかいたぼ！' : 'しょうせつかけたぼ！みにちゃんのぶんもはいってるぼ！');
+  } catch(e) {
+    out.textContent = '書けなかった…ごめんぼ';
+  }
+}
+
+// ── チャット招待 ──
+let miniInChat = false;
+
+async function inviteMini() {
+  if (miniInChat) return;
+  miniInChat = true;
+  document.getElementById('invite-mini-btn').style.display = 'none';
+  document.getElementById('bye-mini-btn').style.display = '';
+
+  // まなぼみにのキャラクターをチャットに登場させる
+  const miniIcon = '🟠';
+  addChatMsgWithIcon('mini', miniIcon, 'わあ！まなぼのおうちだ！えへへ、おじゃましまーす！ていうかここなんなの！？');
+  typeText('ぎゃぼー！みにちゃんがきたぼ！');
+  bounce(); showHappy(true);
+}
+
+function byeMini() {
+  if (!miniInChat) return;
+  miniInChat = false;
+  document.getElementById('invite-mini-btn').style.display = '';
+  document.getElementById('bye-mini-btn').style.display = 'none';
+  addChatMsgWithIcon('mini', '🟠', 'またね！ばいばーい！えへへ！（走って消える）');
+  typeText('みにちゃんかえったぼ…さみしいぼ');
+}
+
+function addChatMsgWithIcon(role, icon, text) {
+  const c = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg manabo';
+  div.innerHTML = `
+    <div style="width:28px;height:28px;border-radius:50%;background:#fff0e0;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${icon}</div>
+    <div class="msg-bub" style="background:#fff0e0;border-color:#ffcc90">${esc(text)}</div>
+    <div class="msg-time">${nowTime()}</div>`;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+}
+
+// sendChatをminiInChat対応に拡張
+const _origSendChat = sendChat;
+// チャット送信時、miniInChatならまなぼみにも返事する
+const _origCallGeminiForChat = async (sys, contents) => {
+  const mainReply = await callGemini(sys, contents);
+  return mainReply;
+};

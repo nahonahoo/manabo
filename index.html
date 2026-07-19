@@ -299,6 +299,12 @@
       <!-- CHAT -->
       <div class="panel active" id="chat-panel">
         <div id="chat-msgs"></div>
+        <div style="display:flex;gap:6px;padding:6px 12px 0;background:var(--white)">
+          <button id="invite-mini-btn" onclick="inviteMini()"
+            style="font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #ffb870;background:#fff0e0;color:#c06010;cursor:pointer;font-family:inherit;white-space:nowrap">🟠 まなぼみにを招待</button>
+          <button id="bye-mini-btn" onclick="byeMini()"
+            style="display:none;font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #ffb870;background:#ffb870;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">🟠 さようなら</button>
+        </div>
         <div id="chat-bar">
           <input id="chat-input" type="text" placeholder="まなぼに話しかける…"
                  autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()"/>
@@ -343,6 +349,8 @@
             <button class="diary-btn" onclick="generateDiary('小説')">📖 短編小説</button>
             <button class="diary-btn" onclick="generateDiary('発表')">🎤 授業で発表</button>
             <button class="diary-btn" onclick="generateDiary('詩')">🌸 詩を書く</button>
+            <button class="diary-btn" onclick="generateJointDiary('合同日記')" style="border-color:#ffb870;color:#c06010">🟠📔 合同日記</button>
+            <button class="diary-btn" onclick="generateJointDiary('合同小説')" style="border-color:#ffb870;color:#c06010">🟠📖 合同小説</button>
           </div>
           <div id="diary-meta" class="diary-meta" style="display:none"></div>
           <div class="diary-out" id="diary-out" style="color:#b0a0cc">（まなぼが書くよ）</div>
@@ -410,6 +418,10 @@
     <div class="d-lbl">Gemini APIキー</div>
     <input class="d-input" id="d-api" type="password" placeholder="APIキーを貼り付け" autocomplete="off"/>
     <button class="d-btn" onclick="saveApiKey()">保存する</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">✉ まなぼみにへ</div>
+    <button class="d-btn" onclick="openLetterModal();closeDrawer()">お手紙を書く・読む</button>
   </div>
   <div class="d-sec">
     <div class="d-lbl">🐾 まなぼのパーソナライズ</div>
@@ -542,9 +554,29 @@
   </div>
 </div>
 
+<!-- お手紙モーダル -->
+<div id="letter-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;max-height:85vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">✉ まなぼみにへお手紙</h3>
+      <button onclick="closeLetterModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <!-- 送る -->
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼみにに送る</div>
+    <textarea id="letter-input" rows="3" placeholder="まなぼみにへのメッセージ…"
+      style="padding:10px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none;resize:none;line-height:1.6"></textarea>
+    <button id="letter-send-btn" onclick="doSendLetter()"
+      style="padding:12px;background:#7c5cbf;color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer">送る ✉</button>
+    <div id="letter-sent-msg" style="display:none;font-size:.82rem;color:#4caf7d;text-align:center">✓ おくったよ！</div>
+    <!-- 受け取った -->
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em;margin-top:4px">もらったお手紙</div>
+    <div id="letter-received" style="font-size:.82rem;color:#b0a0cc">読み込み中…</div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
