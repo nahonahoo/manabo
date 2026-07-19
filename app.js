@@ -1124,15 +1124,14 @@ function setEarShape(shape) {
   ['round','tall','small','cat'].forEach(s => {
     const btn = document.getElementById('ear-btn-' + s);
     if (!btn) return;
-    const active = s === shape;
-    btn.classList.toggle('acc-active', active);
+    btn.className = 'acc-btn' + (s === shape ? ' acc-active' : '');
   });
   applyAppearance();
 }
 
 function setAccessory(acc) {
   S.appearance.accessory = acc;
-  ['none','ribbon','flower','butterfly','crown','star','glasses','glasses2','sunglass1','sunglass2','sunglass3','hat','mohican','blondewig','afro'].forEach(a => {
+  ['none','ribbon','flower','butterfly','crown','star','glasses','glasses2','sunglass1','sunglass2','sunglass3','hat','afro'].forEach(a => {
     const btn = document.getElementById('acc-btn-' + a);
     if (!btn) return;
     const active = a === acc;
@@ -1183,23 +1182,12 @@ openPersonalize = function() {
 // ── しっぽ形状 ──
 const TAIL_SHAPES = {
   normal:   `<ellipse cx="120" cy="104" rx="8" ry="6" fill="COLOR" transform="rotate(25,120,104)"/>`,
-  fluffy:   `<ellipse cx="122" cy="106" rx="14" ry="12" fill="COLOR" opacity="0.7"/>
-             <ellipse cx="118" cy="100" rx="10" ry="9" fill="COLOR" opacity="0.8"/>
-             <ellipse cx="126" cy="100" rx="9" ry="8" fill="COLOR" opacity="0.75"/>`,
-  long:     `<ellipse cx="130" cy="110" rx="6" ry="20" fill="COLOR" transform="rotate(35,130,110)"/>`,
   verylong: `<path d="M118,100 Q145,115 150,140 Q155,160 140,170" stroke="COLOR" stroke-width="10" fill="none" stroke-linecap="round"/>`,
-  huge:     `<ellipse cx="125" cy="108" rx="22" ry="18" fill="COLOR" opacity="0.75"/>
-             <ellipse cx="120" cy="100" rx="16" ry="13" fill="COLOR" opacity="0.85"/>`,
-  bushy:    `<ellipse cx="122" cy="106" rx="12" ry="18" fill="COLOR" opacity="0.7" transform="rotate(15,122,106)"/>
-             <ellipse cx="128" cy="102" rx="10" ry="16" fill="COLOR" opacity="0.65" transform="rotate(30,128,102)"/>
-             <ellipse cx="116" cy="104" rx="9" ry="14" fill="COLOR" opacity="0.7" transform="rotate(5,116,104)"/>`,
-  squirrel: `<path d="M118,100 Q135,85 138,70 Q141,55 130,48 Q125,55 128,68 Q120,75 118,100Z" fill="COLOR"/>`,
-  monkey:   `<path d="M118,102 Q140,108 148,125 Q152,140 145,155 Q138,162 132,155 Q138,145 136,132 Q128,118 118,102Z" stroke="COLOR" stroke-width="8" fill="none" stroke-linecap="round"/>`,
 };
 
 function setTailShape(shape) {
   S.appearance.tailShape = shape;
-  ['normal','fluffy','long','verylong','huge','bushy','squirrel','monkey'].forEach(s => {
+  ['normal','verylong'].forEach(s => {
     const btn = document.getElementById('tail-btn-' + s);
     if (btn) btn.classList.toggle('acc-active', s === shape);
   });

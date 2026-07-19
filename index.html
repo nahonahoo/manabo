@@ -10,7 +10,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <div id="app">
@@ -217,13 +217,15 @@
             <line x1="56" y1="75" x2="52" y2="73" stroke="#555" stroke-width="2"/>
             <line x1="104" y1="75" x2="108" y2="73" stroke="#555" stroke-width="2"/>
           </g>
-          <!-- 😎 サングラス（ハート） -->
+          <!-- 💕 サングラス（ハート） -->
           <g id="sunglass2-g" style="display:none">
-            <path d="M57,73 Q57,68 62,68 Q67,68 67,73 Q67,78 57,83 Q47,78 47,73 Q47,68 52,68 Q57,68 57,73Z" fill="#ff4d6d" opacity="0.9" transform="translate(10,0) scale(0.9)"/>
-            <path d="M57,73 Q57,68 62,68 Q67,68 67,73 Q67,78 57,83 Q47,78 47,73 Q47,68 52,68 Q57,68 57,73Z" fill="#ff4d6d" opacity="0.9" transform="translate(36,0) scale(0.9)"/>
-            <line x1="78" y1="74" x2="82" y2="74" stroke="#ff4d6d" stroke-width="2"/>
-            <line x1="56" y1="73" x2="52" y2="71" stroke="#ff4d6d" stroke-width="2"/>
-            <line x1="104" y1="73" x2="108" y2="71" stroke="#ff4d6d" stroke-width="2"/>
+            <!-- 左レンズ（ハート形） -->
+            <path d="M67,72 Q67,67 71,67 Q75,67 75,72 Q75,77 67,82 Q59,77 59,72 Q59,67 63,67 Q67,67 67,72Z" fill="#ff4d6d" opacity="0.88"/>
+            <!-- 右レンズ（ハート形） -->
+            <path d="M93,72 Q93,67 97,67 Q101,67 101,72 Q101,77 93,82 Q85,77 85,72 Q85,67 89,67 Q93,67 93,72Z" fill="#ff4d6d" opacity="0.88"/>
+            <line x1="75" y1="74" x2="85" y2="74" stroke="#ff4d6d" stroke-width="2"/>
+            <line x1="59" y1="73" x2="55" y2="71" stroke="#ff4d6d" stroke-width="2"/>
+            <line x1="101" y1="73" x2="105" y2="71" stroke="#ff4d6d" stroke-width="2"/>
           </g>
           <!-- 🕶 サングラス（ミラー） -->
           <g id="sunglass3-g" style="display:none">
@@ -245,20 +247,6 @@
           <!-- ⭐ 星のかざり -->
           <g id="star-g" style="display:none">
             <polygon points="80,24 83,33 93,33 85,39 88,48 80,42 72,48 75,39 67,33 77,33" fill="#ffe066" stroke="#f0b800" stroke-width="1"/>
-          </g>
-          <!-- 💈 モヒカン -->
-          <g id="mohican-g" style="display:none">
-            <ellipse cx="80" cy="22" rx="8" ry="18" fill="#ff4d6d"/>
-            <ellipse cx="80" cy="28" rx="6" ry="14" fill="#ff6b8a"/>
-            <ellipse cx="80" cy="34" rx="4" ry="10" fill="#ff8fa3"/>
-          </g>
-          <!-- 👱 金髪かつら -->
-          <g id="blondewig-g" style="display:none">
-            <ellipse cx="80" cy="32" rx="32" ry="20" fill="#ffe066"/>
-            <ellipse cx="80" cy="38" rx="34" ry="12" fill="#ffd700"/>
-            <ellipse cx="50" cy="52" rx="8" ry="18" fill="#ffe066"/>
-            <ellipse cx="110" cy="52" rx="8" ry="18" fill="#ffe066"/>
-            <ellipse cx="80" cy="24" rx="28" ry="10" fill="#fff176"/>
           </g>
           <!-- 🎵 アフロ -->
           <g id="afro-g" style="display:none">
@@ -540,8 +528,6 @@
         <button onclick="setAccessory('sunglass2')" id="acc-btn-sunglass2" class="acc-btn">💕サングラスハート</button>
         <button onclick="setAccessory('sunglass3')" id="acc-btn-sunglass3" class="acc-btn">🕶サングラスミラー</button>
         <button onclick="setAccessory('hat')" id="acc-btn-hat" class="acc-btn">🎩帽子</button>
-        <button onclick="setAccessory('mohican')" id="acc-btn-mohican" class="acc-btn">💈モヒカン</button>
-        <button onclick="setAccessory('blondewig')" id="acc-btn-blondewig" class="acc-btn">👱金髪</button>
         <button onclick="setAccessory('afro')" id="acc-btn-afro" class="acc-btn">🎵アフロ</button>
       </div>
 
@@ -549,13 +535,7 @@
       <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">しっぽの形</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button onclick="setTailShape('normal')" id="tail-btn-normal" class="acc-btn acc-active">ふつう</button>
-        <button onclick="setTailShape('fluffy')" id="tail-btn-fluffy" class="acc-btn">ふわふわ</button>
-        <button onclick="setTailShape('long')" id="tail-btn-long" class="acc-btn">ながい</button>
         <button onclick="setTailShape('verylong')" id="tail-btn-verylong" class="acc-btn">すごく長い</button>
-        <button onclick="setTailShape('huge')" id="tail-btn-huge" class="acc-btn">めちゃ大きい</button>
-        <button onclick="setTailShape('bushy')" id="tail-btn-bushy" class="acc-btn">ぼさぼさ</button>
-        <button onclick="setTailShape('squirrel')" id="tail-btn-squirrel" class="acc-btn">リスっぽい</button>
-        <button onclick="setTailShape('monkey')" id="tail-btn-monkey" class="acc-btn">サルっぽい</button>
       </div>
 
       <button onclick="saveAppearance()" style="padding:11px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:600;font-family:inherit;cursor:pointer;margin-top:2px">見た目を保存する</button>
@@ -569,6 +549,6 @@
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
