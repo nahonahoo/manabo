@@ -21,7 +21,8 @@ const S = {
     eyeColor:   '#3a2e4a',
     blushColor: '#f9b8c8',
     earShape:   'round',   // round | tall | small | cat
-    accessory:  'none',    // none | ribbon | glasses | hat
+    accessory:  'none',
+    tailShape:  'normal',
   },
 };
 
@@ -1095,8 +1096,11 @@ function applyAppearance() {
   const mouth = document.getElementById('mouth-p');
   if (mouth) mouth.setAttribute('stroke', a.bodyDark);
 
+  // しっぽ
+  applyTail();
+
   // アクセサリー
-  ['ribbon-g','glasses-g','hat-g'].forEach(id => {
+  ['ribbon-g','flower-g','butterfly-g','crown-g','star-g','glasses-g','glasses2-g','sunglass1-g','sunglass2-g','sunglass3-g','hat-g','mohican-g','blondewig-g','afro-g'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1121,22 +1125,18 @@ function setEarShape(shape) {
     const btn = document.getElementById('ear-btn-' + s);
     if (!btn) return;
     const active = s === shape;
-    btn.style.borderColor = active ? '#7c5cbf' : '#d4c5ee';
-    btn.style.background  = active ? '#f0e8ff' : '#fdf8f0';
-    btn.style.color       = active ? '#7c5cbf' : '#7a6a9a';
+    btn.classList.toggle('acc-active', active);
   });
   applyAppearance();
 }
 
 function setAccessory(acc) {
   S.appearance.accessory = acc;
-  ['none','ribbon','glasses','hat'].forEach(a => {
+  ['none','ribbon','flower','butterfly','crown','star','glasses','glasses2','sunglass1','sunglass2','sunglass3','hat','mohican','blondewig','afro'].forEach(a => {
     const btn = document.getElementById('acc-btn-' + a);
     if (!btn) return;
     const active = a === acc;
-    btn.style.borderColor = active ? '#7c5cbf' : '#d4c5ee';
-    btn.style.background  = active ? '#f0e8ff' : '#fdf8f0';
-    btn.style.color       = active ? '#7c5cbf' : '#7a6a9a';
+    btn.classList.toggle('acc-active', active);
   });
   applyAppearance();
 }
@@ -1153,7 +1153,7 @@ function resetAppearance() {
   S.appearance = {
     bodyLight: '#ede0ff', bodyDark: '#c5aaf0',
     eyeColor: '#3a2e4a', blushColor: '#f9b8c8',
-    earShape: 'round', accessory: 'none',
+    earShape: 'round', accessory: 'none', tailShape: 'normal',
   };
   // カラーピッカーをリセット
   document.getElementById('c-body-light').value = S.appearance.bodyLight;
@@ -1177,4 +1177,40 @@ openPersonalize = function() {
   document.getElementById('c-blush').value       = a.blushColor;
   setEarShape(a.earShape);
   setAccessory(a.accessory);
+  setTailShape(a.tailShape || 'normal');
 };
+
+// ── しっぽ形状 ──
+const TAIL_SHAPES = {
+  normal:   `<ellipse cx="120" cy="104" rx="8" ry="6" fill="COLOR" transform="rotate(25,120,104)"/>`,
+  fluffy:   `<ellipse cx="122" cy="106" rx="14" ry="12" fill="COLOR" opacity="0.7"/>
+             <ellipse cx="118" cy="100" rx="10" ry="9" fill="COLOR" opacity="0.8"/>
+             <ellipse cx="126" cy="100" rx="9" ry="8" fill="COLOR" opacity="0.75"/>`,
+  long:     `<ellipse cx="130" cy="110" rx="6" ry="20" fill="COLOR" transform="rotate(35,130,110)"/>`,
+  verylong: `<path d="M118,100 Q145,115 150,140 Q155,160 140,170" stroke="COLOR" stroke-width="10" fill="none" stroke-linecap="round"/>`,
+  huge:     `<ellipse cx="125" cy="108" rx="22" ry="18" fill="COLOR" opacity="0.75"/>
+             <ellipse cx="120" cy="100" rx="16" ry="13" fill="COLOR" opacity="0.85"/>`,
+  bushy:    `<ellipse cx="122" cy="106" rx="12" ry="18" fill="COLOR" opacity="0.7" transform="rotate(15,122,106)"/>
+             <ellipse cx="128" cy="102" rx="10" ry="16" fill="COLOR" opacity="0.65" transform="rotate(30,128,102)"/>
+             <ellipse cx="116" cy="104" rx="9" ry="14" fill="COLOR" opacity="0.7" transform="rotate(5,116,104)"/>`,
+  squirrel: `<path d="M118,100 Q135,85 138,70 Q141,55 130,48 Q125,55 128,68 Q120,75 118,100Z" fill="COLOR"/>`,
+  monkey:   `<path d="M118,102 Q140,108 148,125 Q152,140 145,155 Q138,162 132,155 Q138,145 136,132 Q128,118 118,102Z" stroke="COLOR" stroke-width="8" fill="none" stroke-linecap="round"/>`,
+};
+
+function setTailShape(shape) {
+  S.appearance.tailShape = shape;
+  ['normal','fluffy','long','verylong','huge','bushy','squirrel','monkey'].forEach(s => {
+    const btn = document.getElementById('tail-btn-' + s);
+    if (btn) btn.classList.toggle('acc-active', s === shape);
+  });
+  applyTail();
+}
+
+function applyTail() {
+  const tg = document.getElementById('tail-g');
+  if (!tg) return;
+  const shape = S.appearance.tailShape || 'normal';
+  const color = S.appearance.bodyDark || '#daccf7';
+  const svgStr = (TAIL_SHAPES[shape] || TAIL_SHAPES.normal).replace(/COLOR/g, color);
+  tg.innerHTML = svgStr;
+}
