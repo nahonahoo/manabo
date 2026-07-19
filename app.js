@@ -533,6 +533,24 @@ async function sendChat() {
     typeText('えーっと…うまくきこえなかった…');
   }
   S.isThinking = false;
+
+  // まなぼみにが招待されていたら、まなぼみにも返事する
+  if (miniInChat && txt) {
+    setTimeout(() => replyAsMini(txt), 900);
+  }
+}
+
+async function replyAsMini(userMsg) {
+  const miniName = window._miniName || 'まなぼみに';
+  const miniPersona = window._miniPersona || '';
+  const sys = `あなたはペット「${miniName}」。幼稚園〜小学生くらいの生意気で鋭くて好奇心旺盛なキャラ。
+知識をどんどん増やしたくて鋭い質問をしてしまう。アホで破天荒な面もある愉快なキャラ。
+${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
+まなぼ（年上・ユーモア・ツッコミ役）の部屋にいる。語尾は「〜だよ！」「えへへ」「わあ！」など。返答30字以内。ひらがなメイン。`;
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
+    addChatMsgWithIcon('mini', '🟠', raw.trim());
+  } catch(e) {}
 }
 
 // チャットで知識が保存されたときのさりげない表示
@@ -1354,11 +1372,36 @@ async function inviteMini() {
   document.getElementById('invite-mini-btn').style.display = 'none';
   document.getElementById('bye-mini-btn').style.display = '';
 
-  // まなぼみにのキャラクターをチャットに登場させる
-  const miniIcon = '🟠';
-  addChatMsgWithIcon('mini', miniIcon, 'わあ！まなぼのおうちだ！えへへ、おじゃましまーす！ていうかここなんなの！？');
-  typeText('ぎゃぼー！みにちゃんがきたぼ！');
+  // まなぼみにのpetName・personaをFirebaseから取得
+  let miniName = 'まなぼみに';
+  let miniPersona = '';
+  try {
+    const d = await fsReadPartner(PARTNER_ID);
+    if (d) {
+      miniName = d.petName || 'まなぼみに';
+      miniPersona = d.persona || '';
+    }
+  } catch(e) {}
+
+  // まなぼみにのキャラでチャットに登場
+  const sys = `あなたはペット「${miniName}」。幼稚園〜小学1年生くらいの生意気で鋭くて好奇心旺盛なキャラ。
+知識をどんどん増やしたくて鋭い質問をしてしまう。でもアホで破天荒な面白いことも言う愉快なキャラ。
+${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
+今まなぼ（年上・ユーモアがある・ツッコミ役）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `${miniName}がまなぼの部屋に遊びに来た。登場の一言を言って。` }] }]);
+    addChatMsgWithIcon('mini', '🟠', raw.trim());
+    typeText(`ぎゃぼー！${miniName}がきたぼ！`);
+  } catch(e) {
+    addChatMsgWithIcon('mini', '🟠', 'わあ！まなぼのおうちだ！えへへ、おじゃましまーす！ていうかここなんなの！？');
+    typeText('ぎゃぼー！みにちゃんがきたぼ！');
+  }
   bounce(); showHappy(true);
+
+  // チャット入力時にまなぼみにも返事するよう設定
+  window._miniName = miniName;
+  window._miniPersona = miniPersona;
 }
 
 function byeMini() {
