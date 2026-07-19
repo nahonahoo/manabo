@@ -2,10 +2,11 @@
 // ── 相手のビジュアルをミニSVGで生成 ──
 function buildMiniSVG(appearance, size=32) {
   const a = appearance || {};
-  const bl = a.bodyLight  || '#ede0ff';
-  const bd = a.bodyDark   || '#c5aaf0';
-  const ec = a.eyeColor   || '#3a2e4a';
-  const bc = a.blushColor || '#f9b8c8';
+  // デフォルトはまなぼみに（オレンジ系）の色
+  const bl = a.bodyLight  || '#fff0e0';
+  const bd = a.bodyDark   || '#ffb870';
+  const ec = a.eyeColor   || '#6a3a2a';
+  const bc = a.blushColor || '#ffb8a0';
 
   // 耳の形
   const earShapes = {
@@ -765,29 +766,21 @@ function renderKnowledge() {
   const empty = document.getElementById('know-empty');
   const countEl = document.getElementById('know-count');
 
-  // おみやげ知識エリアを更新
+  // 交流レベル表示
   const omiyageSection = document.getElementById('omiyage-section');
-  const omiyageList = document.getElementById('omiyage-list');
   const kouryuEl = document.getElementById('kouryu-lv');
-  if (omiyageSection && omiyageList) {
-    if (S.omiyage.length > 0) {
-      omiyageSection.style.display = '';
-      if (kouryuEl) kouryuEl.textContent = S.omiyage.length;
-      omiyageList.innerHTML = S.omiyage.slice().reverse().slice(0,5).map(o => `
-        <div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:8px 11px">
-          <div style="font-size:10px;color:#c08000;margin-bottom:3px">🎁 ${esc(o.from || 'おみやげ')} より</div>
-          <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(o.topic)}</div>
-          <div style="font-size:.75rem;color:#7a6a9a;margin-top:2px">${esc(o.insight)}</div>
-        </div>`).join('');
-    } else {
-      omiyageSection.style.display = 'none';
-    }
+  if (omiyageSection) {
+    omiyageSection.style.display = S.omiyage.length > 0 ? '' : 'none';
+    if (kouryuEl) kouryuEl.textContent = S.omiyage.length;
   }
 
-  // フィルタ
-  const filtered = S.filterSubject === 'すべて'
-    ? S.knowledge
-    : S.knowledge.filter(k => k.subject === S.filterSubject);
+  // フィルタ（おみやげは別リストから表示）
+  const isOmiyage = S.filterSubject === 'おみやげ';
+  const filtered = isOmiyage
+    ? [] // おみやげフィルター時は通常知識を表示しない
+    : S.filterSubject === 'すべて'
+      ? S.knowledge
+      : S.knowledge.filter(k => k.subject === S.filterSubject);
 
   // ストレージ表示
   const usage = getStorageUsage();
@@ -805,6 +798,30 @@ function renderKnowledge() {
   countEl.textContent = `${filtered.length} 件${S.filterSubject !== 'すべて' ? `（${S.filterSubject}）` : ''}`;
 
   sc.querySelectorAll('.know-card').forEach(e => e.remove());
+
+  // おみやげフィルター時はおみやげ知識を表示
+  if (isOmiyage) {
+    if (S.omiyage.length === 0) {
+      empty.style.display = '';
+      countEl.textContent = 'おみやげ知識はまだないよ';
+      return;
+    }
+    empty.style.display = 'none';
+    countEl.textContent = `おみやげ ${S.omiyage.length} 件`;
+    [...S.omiyage].reverse().forEach(o => {
+      const d = document.createElement('div');
+      d.className = 'know-card';
+      d.innerHTML = `
+        <span class="know-subj" style="background:#fff8e0;color:#c08000;border:1px solid #f0d080">🎁</span>
+        <div class="know-body">
+          <div class="know-topic">${esc(o.topic)}</div>
+          <div class="know-sum">${esc(o.insight)}</div>
+          <div class="know-mis">✉ ${esc(o.from || 'おみやげ')} より</div>
+        </div>`;
+      sc.appendChild(d);
+    });
+    return;
+  }
 
   // 新しい順
   [...filtered].reverse().forEach(k => {
@@ -1484,13 +1501,25 @@ async function inviteMini() {
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
 今まなぼ（ユーモアたっぷりのせんぱい・性別なし・妖精みたいなキャラ）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
 
-  // まなぼみにのappearance・petNameを最新状態で取得（招待のたびに最新を読む）
+  // まなぼみにのappearance・petNameを最新状態で取得
+  // Firebase SDKキャッシュをバイパスしてサーバーから直接読む
   let miniAppearance = null;
   try {
-    const latest = await fsReadPartner(PARTNER_ID);
-    if (latest?.appearance) miniAppearance = JSON.parse(latest.appearance);
-    if (latest?.petName) miniName = latest.petName; // 最新の名前も更新
-  } catch(e) {}
+    const db = getDB();
+    const snap = await db.collection('manabo').doc(PARTNER_ID).get({ source: 'server' });
+    if (snap.exists) {
+      const latest = snap.data();
+      if (latest.appearance) miniAppearance = JSON.parse(latest.appearance);
+      if (latest.petName) miniName = latest.petName;
+    }
+  } catch(e) {
+    // サーバー取得失敗時はキャッシュから試みる
+    try {
+      const latest = await fsReadPartner(PARTNER_ID);
+      if (latest?.appearance) miniAppearance = JSON.parse(latest.appearance);
+      if (latest?.petName) miniName = latest.petName;
+    } catch(e2) {}
+  }
   const miniSVG = buildMiniSVG(miniAppearance, 28);
 
   try {

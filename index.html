@@ -299,11 +299,13 @@
       <!-- CHAT -->
       <div class="panel active" id="chat-panel">
         <div id="chat-msgs"></div>
-        <div style="display:flex;gap:6px;padding:6px 12px 0;background:var(--white)">
+        <div style="display:flex;gap:6px;padding:6px 12px 0;background:var(--white);flex-wrap:wrap">
           <button id="invite-mini-btn" onclick="inviteMini()"
             style="font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #ffb870;background:#fff0e0;color:#c06010;cursor:pointer;font-family:inherit;white-space:nowrap">🟠 まなぼみにを招待</button>
           <button id="bye-mini-btn" onclick="byeMini()"
             style="display:none;font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #ffb870;background:#ffb870;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">🟠 さようなら</button>
+          <button onclick="openLetterModal()"
+            style="font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #c5aaf0;background:#ede0ff;color:#7c5cbf;cursor:pointer;font-family:inherit;white-space:nowrap">✉ お手紙</button>
         </div>
         <div id="chat-bar">
           <input id="chat-input" type="text" placeholder="まなぼに話しかける…"
@@ -368,18 +370,17 @@
           <button class="filter-chip" onclick="setFilter('国語',this)">国語</button>
           <button class="filter-chip" onclick="setFilter('英語',this)">英語</button>
           <button class="filter-chip" onclick="setFilter('日常',this)">日常</button>
+          <button class="filter-chip" onclick="setFilter('おみやげ',this)" style="border-color:#f0b800;color:#c08000">🎁 おみやげ</button>
         </div>
         <div class="storage-bar-wrap">
           <div class="storage-bar-lbl" id="storage-lbl">Firebase同期済み ☁</div>
           <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
         </div>
         <div class="know-count" id="know-count"></div>
-        <!-- おみやげ知識エリア -->
-        <div id="omiyage-section" style="padding:8px 12px 0;display:none">
-          <div style="font-size:11px;font-weight:600;color:#c08000;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">
-            🎁 おみやげ知識（交流レベル <span id="kouryu-lv">0</span>）
+        <div id="omiyage-section" style="padding:4px 12px 0;display:none">
+          <div style="font-size:11px;font-weight:600;color:#c08000;letter-spacing:.05em;margin-bottom:2px">
+            🎁 交流レベル <span id="kouryu-lv">0</span>
           </div>
-          <div id="omiyage-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
         </div>
         <div class="know-scroll" id="know-scroll">
           <div class="know-empty" id="know-empty">
@@ -589,6 +590,6 @@
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=16"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
