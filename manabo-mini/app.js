@@ -13,7 +13,7 @@ const S = {
   filterSubject: 'すべて',
   editingId: null,
   gobi: [...DEFAULT_GOBI], // カスタマイズ可能な語尾リスト
-  petName: 'まなぼ',       // ペットの名前
+  petName: 'まなぼみに',    // ペットの名前
   persona: '',             // 性格メモ
   appearance: {            // 見た目設定
     bodyLight:  '#ede0ff',
