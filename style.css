@@ -230,3 +230,7 @@ html,body{height:100%;background:var(--cream);overflow:hidden;
   from { opacity:0; transform:translateX(-50%) translateY(6px); }
   to   { opacity:1; transform:translateX(-50%) translateY(0); }
 }
+
+.acc-btn{padding:8px 13px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.8rem;font-family:inherit;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;display:inline-block}
+.acc-btn:active{opacity:.7;transform:scale(0.96)}
+.acc-active{border-color:#7c5cbf !important;background:#f0e8ff !important;color:#7c5cbf !important;font-weight:600}
