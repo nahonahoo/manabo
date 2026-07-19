@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="まなぼみに">
+<title>まなぼみに</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ SETUP ══ -->
+  <div id="setup-screen">
+    <div id="setup-loading" style="display:none;text-align:center;color:#b0a0cc;font-size:.88rem;padding:1rem">
+      まなぼのきおくをよみこんでるぼ…🔄
+    </div>
+    <div id="setup-form">
+    <svg class="setup-pet" viewBox="0 0 160 160">
+      <defs>
+        <radialGradient id="sg" cx="50%" cy="42%" r="55%">
+          <stop offset="0%" stop-color="#ede0ff"/>
+          <stop offset="100%" stop-color="#c5aaf0"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="80" cy="148" rx="30" ry="6" fill="#c8b0e8" opacity="0.3"/>
+      <ellipse cx="80" cy="98" rx="44" ry="46" fill="url(#sg)"/>
+      <ellipse cx="48" cy="62" rx="13" ry="16" fill="#daccf7" transform="rotate(-15,48,62)"/>
+      <ellipse cx="50" cy="63" rx="6" ry="9"  fill="#f9c6e2" transform="rotate(-15,50,63)"/>
+      <ellipse cx="112" cy="62" rx="13" ry="16" fill="#daccf7" transform="rotate(15,112,62)"/>
+      <ellipse cx="110" cy="63" rx="6" ry="9"  fill="#f9c6e2" transform="rotate(15,110,63)"/>
+      <ellipse cx="80" cy="94" rx="36" ry="34" fill="#ede0ff"/>
+      <ellipse cx="67" cy="85" rx="5" ry="5.5" fill="#3a2e4a"/>
+      <circle  cx="69" cy="83.5" r="1.4" fill="white"/>
+      <ellipse cx="93" cy="85" rx="5" ry="5.5" fill="#3a2e4a"/>
+      <circle  cx="95" cy="83.5" r="1.4" fill="white"/>
+      <ellipse cx="80" cy="93" rx="2.2" ry="1.8" fill="#b09ad4"/>
+      <path d="M75 97 Q80 102 85 97" stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="60" cy="97" rx="10" ry="6.5" fill="#f9b8c8" opacity="0.5"/>
+      <ellipse cx="100" cy="97" rx="10" ry="6.5" fill="#f9b8c8" opacity="0.5"/>
+    </svg>
+    <h1>まなぼ</h1>
+    <p>おしえると育つ、かわいいペットだよ！<br>おとなのひとといっしょにはじめてね。</p>
+    <input class="field" id="api-key-input" type="password"
+           placeholder="APIキーを貼り付け" autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <p class="hint">
+      おとなのひとにAPIキーをいれてもらおう！
+    </p>
+    <button class="btn-primary" onclick="startApp()">まなぼみにとはじめる</button>
+    </div><!-- /setup-form -->
+  </div>
+
+  <!-- ══ MAIN APP ══ -->
+  <div id="main-app" style="display:none">
+
+    <!-- HEADER -->
+    <div id="header">
+      <div class="lv-badge">Lv.<span id="lv-num">1</span></div>
+      <div class="xp-wrap">
+        <div class="xp-lbl">おぼえてること <span id="xp-num">0</span>/<span id="xp-max">5</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      </div>
+      <button class="icon-btn" onclick="openDrawer()">☰</button>
+    </div>
+
+    <!-- PET -->
+    <div id="pet-area">
+      <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible">
+        <defs>
+          <radialGradient id="mg" cx="50%" cy="42%" r="55%">
+            <stop offset="0%" stop-color="#ede0ff"/>
+            <stop offset="100%" stop-color="#c5aaf0"/>
+          </radialGradient>
+          <radialGradient id="blush" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f9b8c8" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#f9b8c8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- 全体を包むグループ（ジャンプ・震え用） -->
+        <g id="pet-root">
+
+          <!-- 影（ジャンプで縮む） -->
+          <ellipse id="shadow-e" cx="80" cy="125" rx="28" ry="5" fill="#c8b0e8" opacity="0.25"/>
+
+          <!-- 左手（パタパタ用） -->
+          <ellipse id="arm-l" cx="36" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(-30,36,95)"/>
+          <!-- 右手（パタパタ用） -->
+          <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#daccf7" transform="rotate(30,124,95)"/>
+
+          <!-- 体 -->
+          <ellipse id="body-e" cx="80" cy="85" rx="44" ry="42" fill="url(#mg)"/>
+
+          <!-- 耳グループ（形変更用） -->
+          <g id="ear-g">
+            <ellipse id="ear-l" cx="48"  cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(-15,48,53)"/>
+            <ellipse id="ear-l-in" cx="50"  cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(-15,50,54)"/>
+            <ellipse id="ear-r" cx="112" cy="53" rx="12" ry="15" fill="#daccf7" transform="rotate(15,112,53)"/>
+            <ellipse id="ear-r-in" cx="110" cy="54" rx="5.5" ry="8"  fill="#f9c6e2" transform="rotate(15,110,54)"/>
+          </g>
+
+          <!-- 顔ベース -->
+          <ellipse id="face-e" cx="80" cy="82" rx="35" ry="32" fill="#ede0ff"/>
+
+          <!-- 目（通常） -->
+          <g id="eyes-g">
+            <ellipse id="eye-l" cx="67" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
+            <circle  cx="69" cy="73.5" r="1.4" fill="white"/>
+            <ellipse id="eye-r" cx="93" cy="75" rx="5" ry="5.5" fill="#3a2e4a"/>
+            <circle  cx="95" cy="73.5" r="1.4" fill="white"/>
+          </g>
+
+          <!-- まばたき -->
+          <g id="blink-g" style="display:none">
+            <rect x="62" y="74" width="10" height="3" rx="1.5" fill="#3a2e4a"/>
+            <rect x="88" y="74" width="10" height="3" rx="1.5" fill="#3a2e4a"/>
+          </g>
+
+          <!-- びっくり目 -->
+          <g id="surprise-g" style="display:none">
+            <ellipse cx="67" cy="75" rx="6" ry="7" fill="#3a2e4a"/>
+            <circle  cx="69" cy="73" r="1.8" fill="white"/>
+            <ellipse cx="93" cy="75" rx="6" ry="7" fill="#3a2e4a"/>
+            <circle  cx="95" cy="73" r="1.8" fill="white"/>
+          </g>
+
+          <!-- 細目（うれしい） -->
+          <g id="happy-eye-g" style="display:none">
+            <path d="M62 75 Q67 70 72 75" stroke="#3a2e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M88 75 Q93 70 98 75" stroke="#3a2e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- 鼻 -->
+          <ellipse id="nose-e" cx="80" cy="83" rx="2.2" ry="1.8" fill="#b09ad4"/>
+
+          <!-- 口 -->
+          <path id="mouth-p" d="M77 87 Q80 91 83 87"
+                stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <ellipse id="mouth-open" cx="80" cy="89" rx="3.5" ry="2.5" fill="#c5aaf0" style="display:none"/>
+
+          <!-- ほっぺ -->
+          <ellipse id="blush-l" cx="60"  cy="87" rx="10" ry="6" fill="url(#blush)"/>
+          <ellipse id="blush-r" cx="100" cy="87" rx="10" ry="6" fill="url(#blush)"/>
+
+          <!-- しっぽ -->
+          <g id="tail-g">
+            <ellipse id="tail-e" cx="120" cy="104" rx="8" ry="6" fill="#daccf7" transform="rotate(25,120,104)"/>
+          </g>
+
+          <!-- 🎀 リボン -->
+          <g id="ribbon-g" style="display:none">
+            <polygon points="48,42 56,48 48,54" fill="#f97cb0" opacity="0.9"/>
+            <polygon points="64,42 56,48 64,54" fill="#f97cb0" opacity="0.9"/>
+            <circle cx="56" cy="48" r="3.5" fill="#fb9cc8"/>
+          </g>
+          <!-- 🌸 花 -->
+          <g id="flower-g" style="display:none">
+            <circle cx="80" cy="38" r="5" fill="#ffe066"/>
+            <ellipse cx="80" cy="28" rx="4" ry="6" fill="#ff9ec8"/>
+            <ellipse cx="80" cy="48" rx="4" ry="6" fill="#ff9ec8"/>
+            <ellipse cx="70" cy="38" rx="6" ry="4" fill="#ff9ec8"/>
+            <ellipse cx="90" cy="38" rx="6" ry="4" fill="#ff9ec8"/>
+            <ellipse cx="73" cy="31" rx="4" ry="6" fill="#ffb8d8" transform="rotate(45,73,31)"/>
+            <ellipse cx="87" cy="31" rx="4" ry="6" fill="#ffb8d8" transform="rotate(-45,87,31)"/>
+            <ellipse cx="73" cy="45" rx="4" ry="6" fill="#ffb8d8" transform="rotate(-45,73,45)"/>
+            <ellipse cx="87" cy="45" rx="4" ry="6" fill="#ffb8d8" transform="rotate(45,87,45)"/>
+            <circle cx="80" cy="38" r="5" fill="#ffe066"/>
+          </g>
+          <!-- 🦋 ちょうちょ -->
+          <g id="butterfly-g" style="display:none">
+            <ellipse cx="68" cy="38" rx="10" ry="7" fill="#b388ff" opacity="0.85" transform="rotate(-20,68,38)"/>
+            <ellipse cx="92" cy="38" rx="10" ry="7" fill="#b388ff" opacity="0.85" transform="rotate(20,92,38)"/>
+            <ellipse cx="70" cy="46" rx="7" ry="5" fill="#ce93d8" opacity="0.8" transform="rotate(15,70,46)"/>
+            <ellipse cx="90" cy="46" rx="7" ry="5" fill="#ce93d8" opacity="0.8" transform="rotate(-15,90,46)"/>
+            <ellipse cx="80" cy="41" rx="2" ry="7" fill="#5c3d8f"/>
+            <line x1="80" y1="34" x2="73" y2="28" stroke="#5c3d8f" stroke-width="1.5"/>
+            <line x1="80" y1="34" x2="87" y2="28" stroke="#5c3d8f" stroke-width="1.5"/>
+            <circle cx="73" cy="28" r="2" fill="#5c3d8f"/>
+            <circle cx="87" cy="28" r="2" fill="#5c3d8f"/>
+          </g>
+          <!-- 👑 王冠 -->
+          <g id="crown-g" style="display:none">
+            <polygon points="58,50 63,35 70,45 80,30 90,45 97,35 102,50" fill="#ffd700" stroke="#e0a800" stroke-width="1.5" stroke-linejoin="round"/>
+            <rect x="58" y="48" width="44" height="8" rx="3" fill="#ffd700" stroke="#e0a800" stroke-width="1"/>
+            <circle cx="80" cy="32" r="3.5" fill="#ff4d6d"/>
+            <circle cx="64" cy="42" r="2.5" fill="#4fc3f7"/>
+            <circle cx="96" cy="42" r="2.5" fill="#4fc3f7"/>
+          </g>
+          <!-- 👓 メガネ（丸） -->
+          <g id="glasses-g" style="display:none">
+            <rect x="58" y="70" width="18" height="13" rx="5" fill="none" stroke="#7c5cbf" stroke-width="2"/>
+            <rect x="84" y="70" width="18" height="13" rx="5" fill="none" stroke="#7c5cbf" stroke-width="2"/>
+            <line x1="76" y1="76" x2="84" y2="76" stroke="#7c5cbf" stroke-width="2"/>
+            <line x1="58" y1="76" x2="55" y2="74" stroke="#7c5cbf" stroke-width="2"/>
+            <line x1="102" y1="76" x2="105" y2="74" stroke="#7c5cbf" stroke-width="2"/>
+          </g>
+          <!-- 🤓 メガネ（四角） -->
+          <g id="glasses2-g" style="display:none">
+            <rect x="57" y="69" width="20" height="14" rx="2" fill="none" stroke="#3a2e4a" stroke-width="2.2"/>
+            <rect x="83" y="69" width="20" height="14" rx="2" fill="none" stroke="#3a2e4a" stroke-width="2.2"/>
+            <line x1="77" y1="76" x2="83" y2="76" stroke="#3a2e4a" stroke-width="2"/>
+            <line x1="57" y1="75" x2="53" y2="73" stroke="#3a2e4a" stroke-width="2"/>
+            <line x1="103" y1="75" x2="107" y2="73" stroke="#3a2e4a" stroke-width="2"/>
+          </g>
+          <!-- 😎 サングラス（黒） -->
+          <g id="sunglass1-g" style="display:none">
+            <rect x="56" y="70" width="22" height="12" rx="6" fill="#1a1a2e" opacity="0.9"/>
+            <rect x="82" y="70" width="22" height="12" rx="6" fill="#1a1a2e" opacity="0.9"/>
+            <line x1="78" y1="76" x2="82" y2="76" stroke="#555" stroke-width="2"/>
+            <line x1="56" y1="75" x2="52" y2="73" stroke="#555" stroke-width="2"/>
+            <line x1="104" y1="75" x2="108" y2="73" stroke="#555" stroke-width="2"/>
+          </g>
+          <!-- 💕 サングラス（ハート） -->
+          <g id="sunglass2-g" style="display:none">
+            <!-- 左レンズ（ハート形） -->
+            <path d="M67,72 Q67,67 71,67 Q75,67 75,72 Q75,77 67,82 Q59,77 59,72 Q59,67 63,67 Q67,67 67,72Z" fill="#ff4d6d" opacity="0.88"/>
+            <!-- 右レンズ（ハート形） -->
+            <path d="M93,72 Q93,67 97,67 Q101,67 101,72 Q101,77 93,82 Q85,77 85,72 Q85,67 89,67 Q93,67 93,72Z" fill="#ff4d6d" opacity="0.88"/>
+            <line x1="75" y1="74" x2="85" y2="74" stroke="#ff4d6d" stroke-width="2"/>
+            <line x1="59" y1="73" x2="55" y2="71" stroke="#ff4d6d" stroke-width="2"/>
+            <line x1="101" y1="73" x2="105" y2="71" stroke="#ff4d6d" stroke-width="2"/>
+          </g>
+          <!-- 🕶 サングラス（ミラー） -->
+          <g id="sunglass3-g" style="display:none">
+            <rect x="56" y="70" width="22" height="11" rx="5" fill="#4fc3f7" opacity="0.85"/>
+            <rect x="82" y="70" width="22" height="11" rx="5" fill="#4fc3f7" opacity="0.85"/>
+            <rect x="56" y="70" width="22" height="4" rx="3" fill="white" opacity="0.3"/>
+            <rect x="82" y="70" width="22" height="4" rx="3" fill="white" opacity="0.3"/>
+            <line x1="78" y1="75" x2="82" y2="75" stroke="#29b6f6" stroke-width="2"/>
+            <line x1="56" y1="74" x2="52" y2="72" stroke="#29b6f6" stroke-width="2"/>
+            <line x1="104" y1="74" x2="108" y2="72" stroke="#29b6f6" stroke-width="2"/>
+          </g>
+          <!-- 🎩 トップハット -->
+          <g id="hat-g" style="display:none">
+            <ellipse cx="80" cy="47" rx="24" ry="5" fill="#2d2040"/>
+            <rect x="66" y="25" width="28" height="23" rx="3" fill="#2d2040"/>
+            <rect x="64" y="43" width="32" height="5" rx="2" fill="#3a2e4a"/>
+            <rect x="70" y="29" width="20" height="5" rx="2" fill="#c5aaf0" opacity="0.3"/>
+          </g>
+          <!-- ⭐ 星のかざり -->
+          <g id="star-g" style="display:none">
+            <polygon points="80,24 83,33 93,33 85,39 88,48 80,42 72,48 75,39 67,33 77,33" fill="#ffe066" stroke="#f0b800" stroke-width="1"/>
+          </g>
+          <!-- 🎵 アフロ -->
+          <g id="afro-g" style="display:none">
+            <circle cx="80" cy="28" r="30" fill="#3d2b1f"/>
+            <circle cx="60" cy="35" r="12" fill="#3d2b1f"/>
+            <circle cx="100" cy="35" r="12" fill="#3d2b1f"/>
+            <circle cx="70" cy="20" r="10" fill="#4a3428"/>
+            <circle cx="90" cy="20" r="10" fill="#4a3428"/>
+            <circle cx="80" cy="15" r="9" fill="#4a3428"/>
+          </g>
+
+          <!-- ハッピースター -->
+          <g id="happy-g" style="display:none">
+            <text x="24"  y="48" font-size="14" opacity="0.7" fill="#c5aaf0">✦</text>
+            <text x="118" y="44" font-size="10" opacity="0.6" fill="#c5aaf0">✦</text>
+          </g>
+
+          <!-- zzz -->
+          <g id="zzz-g" style="display:none">
+            <text x="118" y="64" font-size="10" fill="#c5aaf0" opacity="0.8">z</text>
+            <text x="126" y="54" font-size="13" fill="#c5aaf0" opacity="0.55">z</text>
+            <text x="135" y="42" font-size="16" fill="#c5aaf0" opacity="0.35">z</text>
+          </g>
+
+        </g><!-- /pet-root -->
+      </svg>
+    </div>
+
+    <!-- SPEECH -->
+    <div class="speech-wrap">
+      <div class="bubble">
+        <span id="speech-text"></span>
+        <span id="speech-dots" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div id="tabs">
+      <button class="tab active" onclick="switchTab('chat',this)">💬 はなす</button>
+      <button class="tab" onclick="switchTab('teach',this)">📖 おしえる</button>
+      <button class="tab" onclick="switchTab('diary',this)">📝 にっき</button>
+      <button class="tab" onclick="switchTab('knowledge',this)">🧠 きおく</button>
+    </div>
+
+    <!-- PANELS -->
+    <div id="panels">
+
+      <!-- CHAT -->
+      <div class="panel active" id="chat-panel">
+        <div id="chat-msgs"></div>
+        <div id="chat-bar">
+          <input id="chat-input" type="text" placeholder="まなぼに話しかける…"
+                 autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button id="chat-send" onclick="sendChat()">↑</button>
+        </div>
+      </div>
+
+      <!-- TEACH -->
+      <div class="panel" id="teach-panel">
+        <div class="teach-scroll">
+          <div class="sec-title">教科を選ぶ</div>
+          <div class="chips">
+            <button class="chip" onclick="selSubject('すうじ',this)">すうじ</button>
+            <button class="chip" onclick="selSubject('しぜん',this)">しぜん</button>
+            <button class="chip" onclick="selSubject('せかい',this)">せかい</button>
+            <button class="chip" onclick="selSubject('ことば',this)">ことば</button>
+            <button class="chip" onclick="selSubject('えいご',this)">えいご</button>
+            <button class="chip" onclick="selSubject('日常',this)">日常</button>
+          </div>
+          <div class="sec-title">おしえる内容</div>
+          <textarea class="teach-ta" id="teach-ta"
+                    placeholder="なんでもおしえてね！" rows="3"></textarea>
+          <button class="btn-teach" id="teach-btn" onclick="teachManabo()" disabled
+            style="width:100%;padding:16px;font-size:1.05rem;border-radius:16px;margin-top:4px">
+            おしえる ✨
+          </button>
+          <div id="misread-area" style="display:none">
+            <div class="misread">
+              <div class="misread-lbl">まなぼの解釈 💭</div>
+              <div id="misread-text"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIARY -->
+      <div class="panel" id="diary-panel">
+        <div class="diary-scroll">
+          <div class="sec-title">まなぼに書かせる</div>
+          <div class="diary-grid">
+            <button class="diary-btn" onclick="generateDiary('日記')">📔 今日の日記</button>
+            <button class="diary-btn" onclick="generateDiary('小説')">📖 短編小説</button>
+            <button class="diary-btn" onclick="generateDiary('発表')">🎤 授業で発表</button>
+            <button class="diary-btn" onclick="generateDiary('詩')">🌸 詩を書く</button>
+          </div>
+          <div id="diary-meta" class="diary-meta" style="display:none"></div>
+          <div class="diary-out" id="diary-out" style="color:#b0a0cc">（まなぼが書くよ）</div>
+        </div>
+      </div>
+
+      <!-- KNOWLEDGE -->
+      <div class="panel" id="knowledge-panel">
+        <div class="know-top">
+          <button class="filter-chip active" onclick="setFilter('すべて',this)">すべて</button>
+          <button class="filter-chip" onclick="setFilter('数学',this)">数学</button>
+          <button class="filter-chip" onclick="setFilter('理科',this)">理科</button>
+          <button class="filter-chip" onclick="setFilter('社会',this)">社会</button>
+          <button class="filter-chip" onclick="setFilter('国語',this)">国語</button>
+          <button class="filter-chip" onclick="setFilter('英語',this)">英語</button>
+          <button class="filter-chip" onclick="setFilter('日常',this)">日常</button>
+        </div>
+        <div class="storage-bar-wrap">
+          <div class="storage-bar-lbl" id="storage-lbl">Firebase同期済み ☁</div>
+          <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
+        </div>
+        <div class="know-count" id="know-count"></div>
+        <div class="know-scroll" id="know-scroll">
+          <div class="know-empty" id="know-empty">
+            まだ何も覚えてないよ…<br>「おしえる」タブから教えてあげてね 🐾
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panels -->
+  </div><!-- /main-app -->
+</div><!-- /app -->
+
+<!-- EDIT MODAL -->
+<div id="edit-bg" onclick="if(event.target===this)closeEdit()">
+  <div id="edit-sheet">
+    <h3>✏ 記憶を編集</h3>
+    <input  class="edit-field" id="edit-topic"   type="text" placeholder="トピック"/>
+    <textarea class="edit-field" id="edit-summary" rows="3" placeholder="まなぼの理解（正確な内容）"></textarea>
+    <input  class="edit-field" id="edit-mis"     type="text" placeholder="まなぼのズレた解釈（任意）"/>
+    <div class="edit-row">
+      <button class="btn-cancel" onclick="closeEdit()">キャンセル</button>
+      <button class="btn-save"   onclick="saveEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- LEVEL UP -->
+<div id="lv-overlay">
+  <div class="star">✦</div>
+  <h2>レベルアップ！</h2>
+  <p id="lv-msg"></p>
+  <button onclick="document.getElementById('lv-overlay').classList.remove('show')">やったー！</button>
+</div>
+
+<!-- DRAWER -->
+<div id="drawer-bg" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <button class="d-close" onclick="closeDrawer()">✕</button>
+  <h2>⚙ 設定</h2>
+  <div class="d-sec">
+    <div class="d-lbl">APIキー</div>
+    <input class="d-input" id="d-api" type="password" placeholder="APIキーを貼り付け" autocomplete="off"/>
+    <button class="d-btn" onclick="saveApiKey()">保存する</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">🐾 まなぼのパーソナライズ</div>
+    <button class="d-btn" onclick="openPersonalize()">まなぼをカスタマイズする</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">データをリセット</div>
+    <button class="d-btn danger" onclick="resetAll()">記憶・会話を全消去</button>
+  </div>
+</div>
+
+
+
+
+
+<!-- パーソナライズモーダル -->
+<div id="personalize-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:14px;max-height:88vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🐾 まなぼをカスタマイズ</h3>
+      <button onclick="closePersonalize()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+
+    <!-- まなぼの名前 -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの名前</div>
+      <div style="display:flex;gap:8px">
+        <input id="p13-name" type="text" placeholder="まなぼ"
+          style="flex:1;padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+        <button onclick="savePetName()" style="padding:9px 14px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">変更</button>
+      </div>
+    </div>
+
+    <!-- 語尾エディタ -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの語尾</div>
+      <p style="font-size:.75rem;color:#b0a0cc;line-height:1.6">語尾を自由に追加・削除できます。AIの返答に反映されます。</p>
+      <div style="display:flex;gap:8px">
+        <input id="gobi-input" type="text" placeholder="例：〜にゃ　ぴょん　だぴ"
+          onkeydown="if(event.key==='Enter')addGobi()"
+          style="flex:1;padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+        <button onclick="addGobi()" style="padding:9px 14px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.875rem;font-weight:600;font-family:inherit;cursor:pointer">追加</button>
+      </div>
+      <div id="gobi-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button onclick="resetGobi()" style="padding:8px;background:#f5eedd;color:#7a6a9a;border:1px solid #e8ddf5;border-radius:10px;font-size:.78rem;font-family:inherit;cursor:pointer">語尾をデフォルトに戻す</button>
+    </div>
+
+    <!-- まなぼへのひとこと -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼへのひとこと（性格メモ）</div>
+      <p style="font-size:.75rem;color:#b0a0cc;line-height:1.6">まなぼに伝えたい「きみはこんなキャラだぼ」をひとことで。AIの返答のトーンに影響します。</p>
+      <textarea id="p13-persona" rows="3" placeholder="例：ちょっとおっちょこちょいで、でも一生懸命な子。関西弁も混じる。"
+        style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.82rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none;resize:none;line-height:1.6"></textarea>
+      <button onclick="savePersona()" style="padding:9px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:600;font-family:inherit;cursor:pointer">保存する</button>
+    </div>
+
+    <!-- 見た目カスタマイズ -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの見た目</div>
+
+      <!-- カラーピッカー群 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          体の色（明るい側）
+          <input type="color" id="c-body-light" value="#ede0ff" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          体の色（暗い側）
+          <input type="color" id="c-body-dark" value="#c5aaf0" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          目の色
+          <input type="color" id="c-eye" value="#3a2e4a" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          ほっぺの色
+          <input type="color" id="c-blush" value="#f9b8c8" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
+
+      </div>
+
+      <!-- 耳の形 -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">耳の形</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setEarShape('round')" id="ear-btn-round" class="acc-btn acc-active">まるい</button>
+        <button onclick="setEarShape('tall')" id="ear-btn-tall" class="acc-btn">とがった</button>
+        <button onclick="setEarShape('small')" id="ear-btn-small" class="acc-btn">ちびっこ</button>
+        <button onclick="setEarShape('cat')" id="ear-btn-cat" class="acc-btn">ねこ</button>
+      </div>
+
+      <!-- アクセサリー -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">アクセサリー</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setAccessory('none')" id="acc-btn-none" class="acc-btn acc-active">なし</button>
+        <button onclick="setAccessory('ribbon')" id="acc-btn-ribbon" class="acc-btn">🎀リボン</button>
+        <button onclick="setAccessory('flower')" id="acc-btn-flower" class="acc-btn">🌸花</button>
+        <button onclick="setAccessory('butterfly')" id="acc-btn-butterfly" class="acc-btn">🦋ちょうちょ</button>
+        <button onclick="setAccessory('crown')" id="acc-btn-crown" class="acc-btn">👑王冠</button>
+        <button onclick="setAccessory('star')" id="acc-btn-star" class="acc-btn">⭐星</button>
+        <button onclick="setAccessory('glasses')" id="acc-btn-glasses" class="acc-btn">👓メガネ丸</button>
+        <button onclick="setAccessory('glasses2')" id="acc-btn-glasses2" class="acc-btn">🤓メガネ四角</button>
+        <button onclick="setAccessory('sunglass1')" id="acc-btn-sunglass1" class="acc-btn">😎サングラス黒</button>
+        <button onclick="setAccessory('sunglass2')" id="acc-btn-sunglass2" class="acc-btn">💕サングラスハート</button>
+        <button onclick="setAccessory('sunglass3')" id="acc-btn-sunglass3" class="acc-btn">🕶サングラスミラー</button>
+        <button onclick="setAccessory('hat')" id="acc-btn-hat" class="acc-btn">🎩帽子</button>
+        <button onclick="setAccessory('afro')" id="acc-btn-afro" class="acc-btn">🎵アフロ</button>
+      </div>
+
+      <!-- しっぽ -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">しっぽの形</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setTailShape('normal')" id="tail-btn-normal" class="acc-btn acc-active">ふつう</button>
+        <button onclick="setTailShape('verylong')" id="tail-btn-verylong" class="acc-btn">すごく長い</button>
+      </div>
+
+      <button onclick="saveAppearance()" style="padding:11px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:600;font-family:inherit;cursor:pointer;margin-top:2px">見た目を保存する</button>
+      <button onclick="resetAppearance()" style="padding:8px;background:#f5eedd;color:#7a6a9a;border:1px solid #e8ddf5;border-radius:10px;font-size:.78rem;font-family:inherit;cursor:pointer">デフォルトに戻す</button>
+    </div>
+
+    <div id="p13-result" style="font-size:.82rem;color:#4caf7d;text-align:center;min-height:1.2em"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
