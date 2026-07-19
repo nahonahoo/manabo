@@ -78,6 +78,9 @@ const S = {
   gobi: [...DEFAULT_GOBI], // カスタマイズ可能な語尾リスト
   petName: 'まなぼ',       // ペットの名前
   persona: '',             // 性格メモ
+  omiyage: [],             // おみやげ知識（招待セッション由来）
+  kouryuLv: 0,             // 交流レベル（omiyage数で決まる）
+  partnerName: 'まなぼみに', // 相手の名前（招待時に取得）
   appearance: {            // 見た目設定
     bodyLight:  '#ede0ff',
     bodyDark:   '#c5aaf0',
@@ -154,6 +157,8 @@ async function saveState() {
       monoDate:  S.monoDate,
       knowledge: JSON.stringify(S.knowledge),
       gobi:      JSON.stringify(S.gobi),
+      omiyage:   JSON.stringify(S.omiyage),
+      kouryuLv:  S.kouryuLv,
       petName:    S.petName,
       persona:    S.persona,
       appearance: JSON.stringify(S.appearance),
@@ -191,7 +196,9 @@ async function loadState() {
             secret:           k.secret || false,
           }))
         : [];
-      S.gobi    = d.gobi    ? JSON.parse(d.gobi) : [...DEFAULT_GOBI];
+      S.gobi     = d.gobi    ? JSON.parse(d.gobi) : [...DEFAULT_GOBI];
+      S.omiyage  = d.omiyage  ? JSON.parse(d.omiyage) : [];
+      S.kouryuLv = d.kouryuLv || 0;
       S.petName = d.petName || 'まなぼ';
       S.persona = d.persona || '';
       if (d.appearance) {
@@ -757,6 +764,25 @@ function renderKnowledge() {
   const sc = document.getElementById('know-scroll');
   const empty = document.getElementById('know-empty');
   const countEl = document.getElementById('know-count');
+
+  // おみやげ知識エリアを更新
+  const omiyageSection = document.getElementById('omiyage-section');
+  const omiyageList = document.getElementById('omiyage-list');
+  const kouryuEl = document.getElementById('kouryu-lv');
+  if (omiyageSection && omiyageList) {
+    if (S.omiyage.length > 0) {
+      omiyageSection.style.display = '';
+      if (kouryuEl) kouryuEl.textContent = S.omiyage.length;
+      omiyageList.innerHTML = S.omiyage.slice().reverse().slice(0,5).map(o => `
+        <div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:8px 11px">
+          <div style="font-size:10px;color:#c08000;margin-bottom:3px">🎁 ${esc(o.from || 'おみやげ')} より</div>
+          <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(o.topic)}</div>
+          <div style="font-size:.75rem;color:#7a6a9a;margin-top:2px">${esc(o.insight)}</div>
+        </div>`).join('');
+    } else {
+      omiyageSection.style.display = 'none';
+    }
+  }
 
   // フィルタ
   const filtered = S.filterSubject === 'すべて'
@@ -1474,15 +1500,54 @@ ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
   window._miniName = miniName;
   window._miniPersona = miniPersona;
   window._miniSVG = miniSVG;
+  S.partnerName = miniName;
 }
 
-function byeMini() {
+async function byeMini() {
   if (!miniInChat) return;
   miniInChat = false;
   document.getElementById('invite-mini-btn').style.display = '';
   document.getElementById('bye-mini-btn').style.display = 'none';
-  addChatMsgWithIcon('mini', '🟠', 'またね！ばいばーい！えへへ！（走って消える）');
+  const miniName = window._miniName || 'まなぼみに';
+  const miniSVG = window._miniSVG || buildMiniSVG(null, 28);
+  addChatMsgWithSVG(miniSVG, 'またね！ばいばーい！えへへ！（走って消える）', '#fff0e0', '#ffcc90');
   typeText('みにちゃんかえったぼ…さみしいぼ');
+  // セッション中の会話からおみやげ知識を生成
+  await generateOmiyage(miniName);
+}
+
+async function generateOmiyage(partnerName) {
+  // 直近のチャット履歴から招待セッション分を抽出してAIに要約させる
+  const recentChat = S.chatHistory.slice(-10)
+    .map(m => `${m.role === 'user' ? 'ユーザー' : partnerName}：${m.parts?.[0]?.text || ''}`)
+    .join('\n');
+  if (!recentChat.trim()) return;
+
+  const sys = `会話ログから「ふたつのペットが一緒に話して生まれた気づき・発見・面白い視点」を1〜3個抽出してください。
+受験勉強の知識ではなく、会話から生まれた新しい見方・つながり・ひらめきを抽出します。
+JSON形式のみ（コードブロック不要）:
+[{"topic":"（発見・気づきの短いタイトル）","insight":"（どんなひらめきか1文）","from":"${partnerName}"}]
+会話から何も抽出できない場合は空配列 [] を返す。`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `会話ログ:\n${recentChat}` }] }]);
+    const items = parseJSON(raw);
+    if (Array.isArray(items) && items.length > 0) {
+      items.forEach(item => {
+        S.omiyage.push({
+          id: crypto.randomUUID(),
+          topic: item.topic,
+          insight: item.insight,
+          from: item.from || partnerName,
+          at: Date.now(),
+        });
+      });
+      S.kouryuLv = S.omiyage.length;
+      await saveState();
+      showToast(`🎁 おみやげ知識が ${items.length}個 届いたぼ！`);
+      typeText(`ぎゃぼー！みにちゃんとはなしてひらめいたぼ！`);
+    }
+  } catch(e) { console.warn('omiyage error', e); }
 }
 
 function addChatMsgWithIcon(role, icon, text) {
