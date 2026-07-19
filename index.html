@@ -10,7 +10,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div id="app">
@@ -265,7 +265,7 @@
           </g>
 
           <!-- zzz -->
-          <g id="zzz-g">
+          <g id="zzz-g" style="display:none">
             <text x="118" y="64" font-size="10" fill="#c5aaf0" opacity="0.8">z</text>
             <text x="126" y="54" font-size="13" fill="#c5aaf0" opacity="0.55">z</text>
             <text x="135" y="42" font-size="16" fill="#c5aaf0" opacity="0.35">z</text>
@@ -502,15 +502,11 @@
 
       <!-- 耳の形 -->
       <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">耳の形</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="setEarShape('round')" id="ear-btn-round"
-          style="padding:7px 14px;border-radius:99px;border:1.5px solid #7c5cbf;background:#f0e8ff;color:#7c5cbf;font-size:.78rem;font-family:inherit;cursor:pointer">まるい</button>
-        <button onclick="setEarShape('tall')" id="ear-btn-tall"
-          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">とがった</button>
-        <button onclick="setEarShape('small')" id="ear-btn-small"
-          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">ちびっこ</button>
-        <button onclick="setEarShape('cat')" id="ear-btn-cat"
-          style="padding:7px 14px;border-radius:99px;border:1.5px solid #d4c5ee;background:#fdf8f0;color:#7a6a9a;font-size:.78rem;font-family:inherit;cursor:pointer">ねこ</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setEarShape('round')" id="ear-btn-round" class="acc-btn acc-active">まるい</button>
+        <button onclick="setEarShape('tall')" id="ear-btn-tall" class="acc-btn">とがった</button>
+        <button onclick="setEarShape('small')" id="ear-btn-small" class="acc-btn">ちびっこ</button>
+        <button onclick="setEarShape('cat')" id="ear-btn-cat" class="acc-btn">ねこ</button>
       </div>
 
       <!-- アクセサリー -->
@@ -549,6 +545,6 @@
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

@@ -191,7 +191,21 @@ function showMain() {
   renderKnowledge();
   applyAppearance();
   startMonoLoop();
-  typeText(IDLE[Math.floor(Math.random() * IDLE.length)]);
+  petSleep(); // 起動時は寝てる
+}
+
+// 寝てる状態（zzz表示）
+function petSleep() {
+  showZzz();
+  setEye('blink');
+  setMouth('normal');
+  document.getElementById('happy-g').style.display = 'none';
+}
+
+// 起きてる状態（zzz消す）
+function petWake() {
+  hideZzz();
+  setEye('normal');
 }
 
 // ── HEADER / XP ──
@@ -270,9 +284,20 @@ function setMouth(type) {
 
 function showHappy(on) {
   document.getElementById('happy-g').style.display = on ? '' : 'none';
-  document.getElementById('zzz-g').style.display   = on ? 'none' : '';
-  if (on) { setEye('happy'); setMouth('happy'); }
-  else    { setEye('normal'); setMouth('normal'); }
+  // zzzはshowHappyでは制御しない（showZzz/hideZzzで別管理）
+  if (on) {
+    hideZzz();
+    setEye('happy'); setMouth('happy');
+  } else {
+    setEye('normal'); setMouth('normal');
+  }
+}
+
+function showZzz() {
+  document.getElementById('zzz-g').style.display = '';
+}
+function hideZzz() {
+  document.getElementById('zzz-g').style.display = 'none';
 }
 
 // まばたきループ
@@ -380,6 +405,7 @@ function doThinkShake() {
 }
 
 function petTap() {
+  petWake();
   doSurprise();
   setTimeout(() => {
   if (S.knowledge.length === 0) { typeText('えへへ…なにかおしえてほしいんだぼ〜！（ぽかん）'); return; }
@@ -449,6 +475,7 @@ async function sendChat() {
   if (!txt) return;
   inp.value = '';
   S.isThinking = true;
+  petWake();
   addChatMsg('user', txt);
   S.chatHistory.push({ role: 'user', parts: [{ text: txt }] });
   showThinking(true);
@@ -748,10 +775,20 @@ async function saveEdit() {
 }
 
 // ── MONOLOGUE ──
+let _sleepTimer = null;
+function resetSleepTimer() {
+  clearTimeout(_sleepTimer);
+  _sleepTimer = setTimeout(() => {
+    petSleep();
+    typeText(IDLE[Math.floor(Math.random() * IDLE.length)]);
+  }, 3 * 60 * 1000); // 3分操作なしで寝る
+}
+
 function startMonoLoop() {
   const today = new Date().toDateString();
   if (S.monoDate !== today) { S.monoCount = 0; S.monoDate = today; }
   scheduleNext();
+  resetSleepTimer();
 }
 
 function scheduleNext() {
