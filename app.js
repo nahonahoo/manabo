@@ -196,17 +196,11 @@ function showMain() {
 
 // 寝てる状態（zzz表示）
 function petSleep() {
-  showZzz();
-  setEye('blink');
-  setMouth('normal');
-  document.getElementById('happy-g').style.display = 'none';
+  setEye('normal'); setMouth('normal');
 }
 
 // 起きてる状態（zzz消す）
-function petWake() {
-  hideZzz();
-  setEye('normal');
-}
+function petWake() { setEye('normal'); }
 
 // ── HEADER / XP ──
 function updateHeader() {
@@ -293,12 +287,8 @@ function showHappy(on) {
   }
 }
 
-function showZzz() {
-  document.getElementById('zzz-g').style.display = '';
-}
-function hideZzz() {
-  document.getElementById('zzz-g').style.display = 'none';
-}
+function showZzz() {} // ZZZなし
+function hideZzz() {} // ZZZなし
 
 // まばたきループ
 setInterval(() => {
