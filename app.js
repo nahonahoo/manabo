@@ -1,3 +1,66 @@
+
+// ── 相手のビジュアルをミニSVGで生成 ──
+function buildMiniSVG(appearance, size=32) {
+  const a = appearance || {};
+  const bl = a.bodyLight  || '#ede0ff';
+  const bd = a.bodyDark   || '#c5aaf0';
+  const ec = a.eyeColor   || '#3a2e4a';
+  const bc = a.blushColor || '#f9b8c8';
+
+  // 耳の形
+  const earShapes = {
+    round:  { lrx:8, lry:10, rrx:8, rry:10, lr:-15, rr:15 },
+    tall:   { lrx:6, lry:13, rrx:6, rry:13, lr:-10, rr:10 },
+    small:  { lrx:5, lry:6,  rrx:5, rry:6,  lr:-20, rr:20 },
+    cat:    { lrx:5, lry:9,  rrx:5, rry:9,  lr:-25, rr:25 },
+  };
+  const es = earShapes[a.earShape || 'round'];
+
+  // アクセサリー
+  const accMap = {
+    ribbon:    `<polygon points="18,14 22,17 18,20" fill="#f97cb0"/><polygon points="26,14 22,17 26,20" fill="#f97cb0"/><circle cx="22" cy="17" r="2" fill="#fb9cc8"/>`,
+    flower:    `<circle cx="28" cy="12" r="4" fill="#ffe066"/><circle cx="28" cy="7" r="3" fill="#ff9ec8"/><circle cx="23" cy="12" r="3" fill="#ff9ec8"/><circle cx="33" cy="12" r="3" fill="#ff9ec8"/>`,
+    butterfly: `<ellipse cx="22" cy="13" rx="5" ry="4" fill="#b388ff" opacity="0.85" transform="rotate(-20,22,13)"/><ellipse cx="32" cy="13" rx="5" ry="4" fill="#b388ff" opacity="0.85" transform="rotate(20,32,13)"/>`,
+    crown:     `<polygon points="18,18 20,11 24,16 28,8 32,16 36,11 38,18" fill="#ffd700" stroke="#e0a800" stroke-width="0.8"/>`,
+    star:      `<polygon points="28,7 29.5,12 35,12 30.5,15 32,20 28,17 24,20 25.5,15 21,12 26.5,12" fill="#ffe066" stroke="#f0b800" stroke-width="0.5"/>`,
+    glasses:   `<rect x="18" y="24" width="8" height="5" rx="2" fill="none" stroke="#7c5cbf" stroke-width="1.2"/><rect x="30" y="24" width="8" height="5" rx="2" fill="none" stroke="#7c5cbf" stroke-width="1.2"/><line x1="26" y1="26" x2="30" y2="26" stroke="#7c5cbf" stroke-width="1.2"/>`,
+    glasses2:  `<rect x="18" y="24" width="8" height="5" rx="1" fill="none" stroke="#3a2e4a" stroke-width="1.2"/><rect x="30" y="24" width="8" height="5" rx="1" fill="none" stroke="#3a2e4a" stroke-width="1.2"/><line x1="26" y1="26" x2="30" y2="26" stroke="#3a2e4a" stroke-width="1.2"/>`,
+    sunglass1: `<rect x="18" y="24" width="9" height="5" rx="3" fill="#1a1a2e" opacity="0.9"/><rect x="29" y="24" width="9" height="5" rx="3" fill="#1a1a2e" opacity="0.9"/><line x1="27" y1="26" x2="29" y2="26" stroke="#555" stroke-width="1.2"/>`,
+    sunglass2: `<ellipse cx="22" cy="26" rx="5" ry="4" fill="#ff4d6d" opacity="0.88"/><ellipse cx="34" cy="26" rx="5" ry="4" fill="#ff4d6d" opacity="0.88"/><line x1="27" y1="26" x2="29" y2="26" stroke="#ff4d6d" stroke-width="1.2"/>`,
+    sunglass3: `<rect x="18" y="24" width="9" height="5" rx="3" fill="#4fc3f7" opacity="0.85"/><rect x="29" y="24" width="9" height="5" rx="3" fill="#4fc3f7" opacity="0.85"/><line x1="27" y1="26" x2="29" y2="26" stroke="#29b6f6" stroke-width="1.2"/>`,
+    hat:       `<ellipse cx="28" cy="16" rx="12" ry="2.5" fill="#2d2040"/><rect x="22" y="7" width="12" height="10" rx="2" fill="#2d2040"/>`,
+    afro:      `<circle cx="28" cy="10" r="12" fill="#3d2b1f"/><circle cx="18" cy="14" r="5" fill="#3d2b1f"/><circle cx="38" cy="14" r="5" fill="#3d2b1f"/>`,
+  };
+  const accSVG = accMap[a.accessory] || '';
+
+  // しっぽ
+  const tailSVG = (a.tailShape === 'verylong')
+    ? `<path d="M42,36 Q50,42 52,52" stroke="${bd}" stroke-width="4" fill="none" stroke-linecap="round"/>`
+    : `<ellipse cx="44" cy="38" rx="4" ry="3" fill="${bd}" opacity="0.8" transform="rotate(25,44,38)"/>`;
+
+  return `<svg viewBox="0 0 56 56" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="mg_${size}" cx="50%" cy="42%" r="55%">
+        <stop offset="0%" stop-color="${bl}"/>
+        <stop offset="100%" stop-color="${bd}"/>
+      </radialGradient>
+    </defs>
+    ${tailSVG}
+    <ellipse cx="28" cy="32" rx="18" ry="17" fill="url(#mg_${size})"/>
+    <ellipse cx="${14+es.lrx/2}" cy="${20}" rx="${es.lrx}" ry="${es.lry}" fill="${bd}" transform="rotate(${es.lr},${14+es.lrx/2},${20})"/>
+    <ellipse cx="${42-es.rrx/2}" cy="${20}" rx="${es.rrx}" ry="${es.rry}" fill="${bd}" transform="rotate(${es.rr},${42-es.rrx/2},${20})"/>
+    <ellipse cx="28" cy="30" rx="15" ry="13" fill="${bl}"/>
+    <ellipse cx="23" cy="27" rx="2.5" ry="2.5" fill="${ec}"/>
+    <circle cx="24" cy="26" r="0.8" fill="white"/>
+    <ellipse cx="33" cy="27" rx="2.5" ry="2.5" fill="${ec}"/>
+    <circle cx="34" cy="26" r="0.8" fill="white"/>
+    <ellipse cx="28" cy="31" rx="1.2" ry="1" fill="${bd}"/>
+    <path d="M25 34 Q28 37 31 34" stroke="${bd}" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="20" cy="33" rx="5" ry="3" fill="${bc}" opacity="0.5"/>
+    <ellipse cx="36" cy="33" rx="5" ry="3" fill="${bc}" opacity="0.5"/>
+    ${accSVG}
+  </svg>`;
+}
 // ── STATE ──
 const DEFAULT_GOBI = ['〜ぼ','〜だぼ','〜んだぼ','ぎゃぼー','ぎゃぼ','わぼ','きゃっぽー','ぼっ','ぼぼぼぼ'];
 
@@ -549,7 +612,8 @@ ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
 まなぼ（年上・ユーモア・ツッコミ役）の部屋にいる。語尾は「〜だよ！」「えへへ」「わあ！」など。返答30字以内。ひらがなメイン。`;
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
-    addChatMsgWithIcon('mini', '🟠', raw.trim());
+    const svg = window._miniSVG || buildMiniSVG(null, 28);
+    addChatMsgWithSVG(svg, raw.trim(), '#fff0e0', '#ffcc90');
   } catch(e) {}
 }
 
@@ -1389,19 +1453,27 @@ async function inviteMini() {
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
 今まなぼ（年上・ユーモアがある・ツッコミ役）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
 
+  // まなぼみにのappearanceも取得してアイコンに使う
+  let miniAppearance = null;
+  try {
+    const d2 = await fsReadPartner(PARTNER_ID);
+    if (d2?.appearance) miniAppearance = JSON.parse(d2.appearance);
+  } catch(e) {}
+  const miniSVG = buildMiniSVG(miniAppearance, 28);
+
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `${miniName}がまなぼの部屋に遊びに来た。登場の一言を言って。` }] }]);
-    addChatMsgWithIcon('mini', '🟠', raw.trim());
+    addChatMsgWithSVG(miniSVG, raw.trim(), '#fff0e0', '#ffcc90');
     typeText(`ぎゃぼー！${miniName}がきたぼ！`);
   } catch(e) {
-    addChatMsgWithIcon('mini', '🟠', 'わあ！まなぼのおうちだ！えへへ、おじゃましまーす！ていうかここなんなの！？');
+    addChatMsgWithSVG(miniSVG, 'わあ！まなぼのおうちだ！えへへ、おじゃましまーす！ていうかここなんなの！？', '#fff0e0', '#ffcc90');
     typeText('ぎゃぼー！みにちゃんがきたぼ！');
   }
   bounce(); showHappy(true);
 
-  // チャット入力時にまなぼみにも返事するよう設定
   window._miniName = miniName;
   window._miniPersona = miniPersona;
+  window._miniSVG = miniSVG;
 }
 
 function byeMini() {
@@ -1420,6 +1492,18 @@ function addChatMsgWithIcon(role, icon, text) {
   div.innerHTML = `
     <div style="width:28px;height:28px;border-radius:50%;background:#fff0e0;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${icon}</div>
     <div class="msg-bub" style="background:#fff0e0;border-color:#ffcc90">${esc(text)}</div>
+    <div class="msg-time">${nowTime()}</div>`;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+}
+
+function addChatMsgWithSVG(svgHtml, text, bg, border) {
+  const c = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg manabo';
+  div.innerHTML = `
+    <div style="width:32px;height:32px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">${svgHtml}</div>
+    <div class="msg-bub" style="background:${bg};border-color:${border}">${esc(text)}</div>
     <div class="msg-time">${nowTime()}</div>`;
   c.appendChild(div);
   c.scrollTop = c.scrollHeight;
