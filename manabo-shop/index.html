@@ -86,6 +86,12 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
 /* ローディング */
 #loading{text-align:center;padding:3rem;color:rgba(255,245,220,0.7);font-size:.9rem}
 </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+      if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    }
+  </script>
 </head>
 <body>
 <div id="bg"></div>
@@ -123,7 +129,7 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
   </div>
 </div>
 
-<script src="manabo-shop-items.js"></script>
+<script src="manabo-shop-items.js?v=2"></script>
 <script>
 // Firebase設定
 const FB_CONFIG = {
