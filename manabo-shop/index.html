@@ -374,7 +374,11 @@ async function checkNPCAutoSale() {
 
   const purchases = [];
   for (const item of available) {
-    if (Math.random() > 0.20) continue; // 20%で購入チェック
+    // レア度によって購入チェック確率を変える
+    // 失敗作35% → ふつう25% → 価値あり18% → レア10% → 伝説4%
+    const checkProbs = [0.35, 0.25, 0.18, 0.10, 0.04];
+    const prob = checkProbs[item.rarity] ?? 0.20;
+    if (Math.random() > prob) continue;
     // アクティブNPCの中から相性チェック
     const candidates = activeNPCs.filter(npc => {
       const catMatch = npc.likes.some(l => item.cat && item.cat.includes(l)) || npc.likes.includes(item.cat);
