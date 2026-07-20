@@ -227,6 +227,9 @@ function renderItems() {
   grid.innerHTML = filtered.map(item => {
     const ri = RARITY_INFO[item.rarity];
     const sold = item.sold;
+    const buyerInfo = sold && item.buyerName
+      ? `<div style="font-size:.72rem;color:#888;margin-top:6px;padding:5px 8px;background:#f5f5f5;border-radius:8px">${item.buyerEmoji||'👤'} ${esc(item.buyerName)} が購入しました</div>`
+      : '';
     return `<div class="item-card r${item.rarity}" id="shop-${item.shopId}">
       ${sold ? '<span class="sold-badge">SOLD</span>' : ''}
       <div class="item-emoji">${ri.emoji}</div>
@@ -240,6 +243,7 @@ function renderItems() {
           <span class="item-seller">🏷 ${esc(item.owner)} 作</span>
           <span class="item-price">¥${item.price.toLocaleString()}</span>
         </div>
+        ${buyerInfo}
         ${!sold ? `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="buy-btn" onclick="openBuy('${item.shopId}')">購入する</button></div>` : ''}
       </div>
     </div>`;
@@ -300,38 +304,64 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 4000);
 }
 
-// 王国の住人が自動で買う（1日1〜3回ランダム）
-async function checkAutoSale() {
-  const today = new Date().toDateString();
-  const lastCheck = localStorage.getItem('shop_auto_check');
-  if (lastCheck === today) return;
-  localStorage.setItem('shop_auto_check', today);
-
-  // 10%の確率で自動購入発動
-  if (Math.random() > 0.1) return;
-
+// NPC自動購入システム
+async function checkNPCAutoSale() {
   const available = allShopItems.filter(i => !i.sold);
   if (available.length === 0) return;
 
-  const target = available[Math.floor(Math.random() * available.length)];
-  const buyers = ['王国の魔法使い','旅の商人','謎の冒険者','王国の騎士','森の精霊','王国の貴族','砂漠の商人'];
-  const buyer = buyers[Math.floor(Math.random() * buyers.length)];
+  // 各アイテムに対してNPCが興味を持つか判定
+  const purchases = [];
+  for (const item of available) {
+    // 15%の確率でNPC購入チェック
+    if (Math.random() > 0.15) continue;
+    const npc = checkNPCBuy(item);
+    if (npc) purchases.push({ item, npc });
+  }
 
-  const ownerDoc = target.owner === 'まなぼ' ? 'shared' : 'mini-shared';
-  try {
-    const d = await fsGet(`manabo/${ownerDoc}`);
-    if (!d) return;
-    let shopItems = JSON.parse(d.shopItems || '[]');
-    shopItems = shopItems.map(i => i.shopId === target.shopId ? { ...i, sold: true } : i);
-    const newCoins = (d.coins || 0) + target.price;
-    await fsPatch(`manabo/${ownerDoc}`, { shopItems: JSON.stringify(shopItems), coins: newCoins });
-    showToast(`🏰 ${buyer}が「${target.name}」を¥${target.price.toLocaleString()}で買っていったよ！`);
-    target.sold = true;
-    renderItems();
-  } catch(e) {}
+  if (purchases.length === 0) return;
+
+  // 最大2件まで処理
+  const targets = purchases.slice(0, 2);
+  for (const { item, npc } of targets) {
+    const ownerDoc = item.owner === 'まなぼ' ? 'shared' : 'mini-shared';
+    try {
+      const d = await fsGet(`manabo/${ownerDoc}`);
+      if (!d) continue;
+      let shopItems = JSON.parse(d.shopItems || '[]');
+      shopItems = shopItems.map(i => i.shopId === item.shopId ? { ...i, sold: true, buyerName: npc.name, buyerEmoji: npc.emoji } : i);
+      const newCoins = (d.coins || 0) + item.price;
+      await fsPatch(`manabo/${ownerDoc}`, { shopItems: JSON.stringify(shopItems), coins: newCoins });
+      item.sold = true;
+      item.buyerName = npc.name;
+      item.buyerEmoji = npc.emoji;
+
+      // NPCのセリフをランダムに選ぶ
+      const msg = npc.msg[Math.floor(Math.random() * npc.msg.length)];
+      showNPCBuyToast(npc, item, msg);
+      await new Promise(r => setTimeout(r, 3000)); // 3秒空けて次のNPC購入
+    } catch(e) {}
+  }
+  renderItems();
 }
 
-loadShop().then(() => setTimeout(checkAutoSale, 3000));
+function showNPCBuyToast(npc, item, msg) {
+  const ri = RARITY_INFO[item.rarity];
+  const t = document.getElementById('toast');
+  t.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start">
+    <div style="font-size:2rem;flex-shrink:0">${npc.emoji}</div>
+    <div>
+      <div style="font-weight:700;margin-bottom:3px">${npc.name}が購入！</div>
+      <div style="font-size:.78rem;margin-bottom:4px">${ri.emoji}「${esc(item.name)}」¥${item.price.toLocaleString()}</div>
+      <div style="font-size:.75rem;color:#a07050;font-style:italic">${msg}</div>
+    </div>
+  </div>`;
+  t.style.maxWidth = '340px';
+  t.style.whiteSpace = 'normal';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 6000);
+}
+
+loadShop().then(() => setTimeout(checkNPCAutoSale, 3000));
 </script>
 </body>
 </html>
