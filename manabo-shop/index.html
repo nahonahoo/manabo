@@ -322,44 +322,118 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 4000);
 }
 
-// NPC自動購入システム
-async function checkNPCAutoSale() {
-  const available = allShopItems.filter(i => !i.sold);
-  if (available.length === 0) return;
+// ── 時間ベースNPC自動購入システム ──
+const CHECK_INTERVAL_HOURS = 4; // 4時間ごとに購入チェック
+const LAST_CHECK_KEY = 'shop_last_npc_check';
+const LAST_SEEN_KEY  = 'shop_last_seen_items';
 
-  // 各アイテムに対してNPCが興味を持つか判定
-  const purchases = [];
-  for (const item of available) {
-    // 15%の確率でNPC購入チェック
-    if (Math.random() > 0.15) continue;
-    const npc = checkNPCBuy(item);
-    if (npc) purchases.push({ item, npc });
+// 現在の時間帯を返す（0〜23）
+function currentHour() { return new Date().getHours(); }
+function currentDay()  { return new Date().getDay(); } // 0=日, 6=土
+
+// 時間帯でアクティブなNPCをフィルタ
+function getActiveNPCs() {
+  const h = currentHour();
+  const d = currentDay();
+  return NPCS.filter(npc => {
+    // 時間帯フィルター
+    if (npc.activeHours) {
+      const [from, to] = npc.activeHours;
+      if (from < to) { if (h < from || h >= to) return false; }
+      else            { if (h < from && h >= to) return false; } // 深夜をまたぐ
+    }
+    // 曜日フィルター
+    if (npc.activeDays && !npc.activeDays.includes(d)) return false;
+    return true;
+  });
+}
+
+// メイン購入チェック（時間ベース）
+async function checkNPCAutoSale() {
+  const now = Date.now();
+  const lastCheck = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
+  const hoursSince = (now - lastCheck) / (1000 * 60 * 60);
+
+  // まだ4時間経っていなければスキップ
+  if (hoursSince < CHECK_INTERVAL_HOURS) {
+    const remain = Math.ceil(CHECK_INTERVAL_HOURS - hoursSince);
+    console.log(`次のNPC巡回まであと約${remain}時間`);
+    // それでも「売れたアイテムがないか」通知チェックはする
+    await checkNewSales();
+    return;
   }
 
-  if (purchases.length === 0) return;
+  localStorage.setItem(LAST_CHECK_KEY, String(now));
 
-  // 最大2件まで処理
-  const targets = purchases.slice(0, 2);
-  for (const { item, npc } of targets) {
+  const available = allShopItems.filter(i => !i.sold);
+  if (available.length === 0) { await checkNewSales(); return; }
+
+  // アクティブなNPCだけに絞る
+  const activeNPCs = getActiveNPCs();
+  if (activeNPCs.length === 0) { await checkNewSales(); return; }
+
+  const purchases = [];
+  for (const item of available) {
+    if (Math.random() > 0.20) continue; // 20%で購入チェック
+    // アクティブNPCの中から相性チェック
+    const candidates = activeNPCs.filter(npc => {
+      const catMatch = npc.likes.some(l => item.cat && item.cat.includes(l)) || npc.likes.includes(item.cat);
+      const rarityMatch = npc.likeRarity.includes(item.rarity);
+      const priceOk = item.price >= npc.budget[0] && item.price <= npc.budget[1];
+      return catMatch && rarityMatch && priceOk;
+    });
+    if (candidates.length > 0) {
+      const npc = candidates[Math.floor(Math.random() * candidates.length)];
+      purchases.push({ item, npc });
+    }
+  }
+
+  // 最大2件処理
+  for (const { item, npc } of purchases.slice(0, 2)) {
     const ownerDoc = item.owner === 'まなぼ' ? 'shared' : 'mini-shared';
     try {
       const d = await fsGet(`manabo/${ownerDoc}`);
       if (!d) continue;
       let shopItems = JSON.parse(d.shopItems || '[]');
-      shopItems = shopItems.map(i => i.shopId === item.shopId ? { ...i, sold: true, buyerName: npc.name, buyerEmoji: npc.emoji } : i);
+      shopItems = shopItems.map(i =>
+        i.shopId === item.shopId
+          ? { ...i, sold: true, buyerName: npc.name, buyerEmoji: npc.emoji, soldAt: now }
+          : i
+      );
       const newCoins = (d.coins || 0) + item.price;
-      await fsPatch(`manabo/${ownerDoc}`, { shopItems: JSON.stringify(shopItems), coins: newCoins });
+      await fsPatch(`manabo/${ownerDoc}`, {
+        shopItems: JSON.stringify(shopItems),
+        coins: newCoins,
+        lastSaleNotice: JSON.stringify({ name: item.name, price: item.price, buyer: npc.name, buyerEmoji: npc.emoji, soldAt: now }),
+      });
       item.sold = true;
       item.buyerName = npc.name;
       item.buyerEmoji = npc.emoji;
-
-      // NPCのセリフをランダムに選ぶ
       const msg = npc.msg[Math.floor(Math.random() * npc.msg.length)];
       showNPCBuyToast(npc, item, msg);
-      await new Promise(r => setTimeout(r, 3000)); // 3秒空けて次のNPC購入
-    } catch(e) {}
+      await new Promise(r => setTimeout(r, 3500));
+    } catch(e) { console.warn('NPC purchase error', e); }
   }
   renderItems();
+  await checkNewSales();
+}
+
+// 「前回見たとき以降に売れたアイテム」を通知
+async function checkNewSales() {
+  const lastSeen = Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
+  const newlySold = allShopItems.filter(i => i.sold && i.soldAt && i.soldAt > lastSeen);
+  localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
+  if (newlySold.length === 0) return;
+
+  // 売れたアイテムを上部バナーで通知
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:300;background:linear-gradient(90deg,#f0b000,#ff8c00);color:#2d1a0e;padding:12px 16px;font-size:.88rem;font-weight:700;text-align:center;animation:slideDown .4s ease';
+  banner.innerHTML = newlySold.map(i => {
+    const ri = RARITY_INFO[i.rarity];
+    return `${ri.emoji}「${esc(i.name)}」が${i.buyerEmoji||'👤'}${esc(i.buyerName||'だれか')}に売れました！¥${i.price.toLocaleString()}`;
+  }).join('　／　');
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 8000);
 }
 
 function showNPCBuyToast(npc, item, msg) {
@@ -379,7 +453,12 @@ function showNPCBuyToast(npc, item, msg) {
   setTimeout(() => t.classList.remove('show'), 6000);
 }
 
-loadShop().then(() => setTimeout(checkNPCAutoSale, 3000));
+// アニメーション
+const style = document.createElement('style');
+style.textContent = '@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
+document.head.appendChild(style);
+
+loadShop().then(() => setTimeout(checkNPCAutoSale, 2000));
 </script>
 </body>
 </html>
