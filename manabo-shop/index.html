@@ -167,9 +167,19 @@ function toFields(obj) {
 function fromFields(fields) {
   const obj = {};
   for (const [k, v] of Object.entries(fields)) {
-    if ('stringValue' in v) obj[k] = v.stringValue;
+    if ('stringValue'  in v) obj[k] = v.stringValue;
     else if ('integerValue' in v) obj[k] = Number(v.integerValue);
+    else if ('doubleValue'  in v) obj[k] = Number(v.doubleValue);
     else if ('booleanValue' in v) obj[k] = v.booleanValue;
+    else if ('nullValue'    in v) obj[k] = null;
+    else if ('mapValue'     in v) obj[k] = fromFields(v.mapValue.fields || {});
+    else if ('arrayValue'   in v) obj[k] = (v.arrayValue.values || []).map(av => {
+      if ('stringValue' in av) return av.stringValue;
+      if ('integerValue' in av) return Number(av.integerValue);
+      if ('booleanValue' in av) return av.booleanValue;
+      if ('mapValue' in av) return fromFields(av.mapValue.fields || {});
+      return null;
+    });
   }
   return obj;
 }
@@ -186,11 +196,13 @@ async function loadShop() {
     allShopItems = [];
 
     for (const [d, owner] of [[d1, 'まなぼ'], [d2, 'まなぼみに']]) {
-      if (!d?.shopItems) continue;
+      console.log(`${owner} data:`, d);
+      if (!d?.shopItems) { console.log(`${owner}: shopItemsなし`); continue; }
       try {
         const items = JSON.parse(d.shopItems);
+        console.log(`${owner} shopItems:`, items);
         items.forEach(item => allShopItems.push({ ...item, owner }));
-      } catch(e) {}
+      } catch(e) { console.error(`${owner} parse error:`, e); }
     }
 
     // 売れていないものだけ表示（新しい順）
