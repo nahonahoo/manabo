@@ -528,6 +528,9 @@ async function saveState() {
       craftDate:  S.craftDate,
       appearance: JSON.stringify(S.appearance),
     });
+    // 保存成功後に即UI更新（キャッシュ関係なくメモリ上のSで更新）
+    updateHeader();
+    renderKnowledge();
   } catch(e) {
     console.warn('Firestore save error:', e);
     try {
@@ -542,7 +545,8 @@ async function loadState() {
   S.apiKey = loadApiKeyLocal();
   try {
     const db = getDB();
-    const snap = await db.collection('manabo').doc(MANABO_ID).get();
+    // 常にサーバーから直接取得（キャッシュバイパス）
+    const snap = await db.collection('manabo').doc(MANABO_ID).get({ source: 'server' });
     if (snap.exists) {
       const d = snap.data();
       S.level     = d.level     || 1;
@@ -2118,8 +2122,8 @@ async function craftNewItem() {
 
   S.craftCount++;
   S.inventory.push({ ...item, shopId: crypto.randomUUID(), listedAt: null, sold: false, craftedAt: Date.now() });
-  await saveState();
-  updateHeader();
+  await saveState(); // saveState内でupdateHeader・renderKnowledge呼ばれる
+  renderInventory(); // アイテムボックスも即更新
 
   // 発明結果を表示
   document.getElementById('craft-result-modal').style.display = 'flex';
