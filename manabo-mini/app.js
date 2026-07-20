@@ -525,6 +525,9 @@ async function saveState() {
       craftDate:  S.craftDate,
       appearance: JSON.stringify(S.appearance),
     });
+    // 保存後に即UI更新
+    updateHeader();
+    renderKnowledge();
   } catch(e) {
     console.warn('Firestore save error:', e);
     try {
@@ -539,7 +542,7 @@ async function loadState() {
   S.apiKey = loadApiKeyLocal();
   try {
     const db = getDB();
-    const snap = await db.collection('manabo').doc(MANABO_ID).get();
+    const snap = await db.collection('manabo').doc(MANABO_ID).get({ source: 'server' });
     if (snap.exists) {
       const d = snap.data();
       S.level     = d.level     || 1;
@@ -2066,7 +2069,7 @@ async function craftNewItem() {
   S.craftCount++;
   S.inventory.push({ ...item, shopId: crypto.randomUUID(), listedAt: null, sold: false, craftedAt: Date.now() });
   await saveState();
-  updateHeader();
+  renderInventory();
   document.getElementById('craft-result-modal').style.display = 'flex';
   document.getElementById('craft-result-emoji').textContent = ri.emoji;
   document.getElementById('craft-result-name').textContent = item.name;
