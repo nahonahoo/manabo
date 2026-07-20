@@ -645,7 +645,7 @@ function updateHeader() {
   const craftEl = document.getElementById('craft-remain');
   if (craftEl) {
     const today = new Date().toDateString();
-    const remain = S.craftDate === today ? Math.max(0, 5 - S.craftCount) : 5;
+    const remain = S.craftDate === today ? Math.max(0, 2 - S.craftCount) : 5;
     craftEl.textContent = remain;
   }
 }
@@ -2056,7 +2056,7 @@ function checkKouryuUnlock(prevLv, newLv) {
 async function craftNewItem() {
   const today = new Date().toDateString();
   if (S.craftDate !== today) { S.craftCount = 0; S.craftDate = today; }
-  if (S.craftCount >= 5) { showToast('きょうはもう5かいはつめいしたよ！あしたまたね！'); return; }
+  if (S.craftCount >= 2) { showToast('きょうはもう2かいはつめいしたよ！あしたまたね！'); return; }
   const btn = document.getElementById('craft-btn');
   if (btn) btn.disabled = true;
   typeText('はつめいちゅうだよ…わくわく！✨');
