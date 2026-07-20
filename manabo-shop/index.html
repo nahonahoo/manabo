@@ -2,336 +2,520 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>まなぼ王国商店 ✨</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --gold:#f0b000;--gold-dark:#c08000;--gold-light:#fff8e0;
-  --purple:#7c3aed;--purple-light:#ede9fe;
-  --wood:#8B4513;--wood-light:#d4956a;
-  --text:#2d1a0e;--text2:#6b4226;--text3:#a07050;
-  --white:#fffdf5;--safe-bottom:env(safe-area-inset-bottom,0px);
-}
-html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;background:#1a0a00;overflow-x:hidden}
-
-/* 背景画像 */
-#bg{position:fixed;inset:0;background-image:url('shop-bg.jfif');background-size:cover;background-position:center;z-index:0}
-#bg::after{content:'';position:fixed;inset:0;background:rgba(10,5,0,0.55);z-index:1}
-
-#app{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 0 80px}
-
-/* ヘッダー */
-#header{width:100%;max-width:480px;padding:16px 16px 0;text-align:center}
-.shop-title{font-size:1.6rem;font-weight:800;color:var(--gold);text-shadow:0 0 20px rgba(240,176,0,0.8), 0 2px 4px rgba(0,0,0,0.8);letter-spacing:.06em;margin-bottom:4px}
-.shop-sub{font-size:.75rem;color:var(--gold-light);opacity:.8;margin-bottom:12px}
-
-/* タブ */
-#tabs{display:flex;gap:6px;padding:0 16px;margin-bottom:12px;width:100%;max-width:480px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tab{flex-shrink:0;padding:6px 14px;border-radius:99px;border:1.5px solid rgba(240,176,0,0.4);background:rgba(0,0,0,0.4);color:var(--gold-light);font-size:.78rem;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
-.tab.active{background:var(--gold);color:#2d1a0e;border-color:var(--gold);font-weight:700}
-
-/* 商品グリッド */
-#items-grid{width:100%;max-width:480px;padding:0 12px;display:flex;flex-direction:column;gap:10px}
-
-/* 商品カード */
-.item-card{background:rgba(255,245,220,0.92);border-radius:16px;padding:12px 14px;border:2px solid var(--wood-light);box-shadow:0 4px 20px rgba(0,0,0,0.4);display:flex;gap:12px;align-items:flex-start;position:relative;overflow:hidden}
-.item-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-.item-card.r0::before{background:#9e9e9e}
-.item-card.r1::before{background:#4caf7d}
-.item-card.r2::before{background:#1060a0}
-.item-card.r3::before{background:#9c27b0}
-.item-card.r4::before{background:linear-gradient(90deg,#f0b000,#ff6b00,#f0b000);animation:shimmer 2s infinite}
-@keyframes shimmer{0%,100%{opacity:1}50%{opacity:.7}}
-
-.item-emoji{font-size:2rem;flex-shrink:0;width:44px;text-align:center;line-height:1}
-.item-body{flex:1;min-width:0}
-.item-header{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
-.item-name{font-size:.92rem;font-weight:700;color:var(--text);word-break:break-all}
-.rarity-badge{font-size:.65rem;padding:1px 7px;border-radius:99px;font-weight:700;white-space:nowrap;flex-shrink:0}
-.r0-badge{background:#f5f5f5;color:#666}
-.r1-badge{background:#e8f5ee;color:#2a7a50}
-.r2-badge{background:#e0f0ff;color:#1060a0}
-.r3-badge{background:#f3e5f5;color:#7b1fa2}
-.r4-badge{background:linear-gradient(90deg,#fff8e0,#fff0c0);color:#c08000;border:1px solid #f0b000}
-.item-desc{font-size:.75rem;color:var(--text2);line-height:1.5;margin-bottom:6px}
-.item-footer{display:flex;align-items:center;justify-content:space-between}
-.item-seller{font-size:.72rem;color:var(--text3)}
-.item-price{font-size:1rem;font-weight:800;color:var(--gold-dark)}
-.sold-badge{position:absolute;top:10px;right:10px;background:#c03030;color:white;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:99px}
-
-/* 購入ボタン */
-.buy-btn{padding:5px 14px;background:var(--gold);color:#2d1a0e;border:none;border-radius:99px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
-.buy-btn:active{opacity:.8}
-.buy-btn:disabled{background:#ccc;color:#888;cursor:not-allowed}
-
-/* 空メッセージ */
-.empty-msg{text-align:center;padding:3rem 1rem;color:rgba(255,245,220,0.6);font-size:.9rem;line-height:2}
-
-/* トースト */
-#toast{position:fixed;bottom:calc(20px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:rgba(255,245,220,0.95);border:2px solid var(--gold);border-radius:16px;padding:10px 20px;font-size:.85rem;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;transition:all .3s;z-index:100;pointer-events:none;white-space:nowrap}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* 購入モーダル */
-#buy-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;padding:20px}
-#buy-modal.show{display:flex}
-.buy-sheet{background:var(--white);border-radius:20px;padding:1.5rem;width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;text-align:center}
-.buy-sheet h3{font-size:1.1rem;font-weight:700;color:var(--text)}
-.buy-item-preview{background:var(--gold-light);border-radius:12px;padding:12px;font-size:.85rem;color:var(--text2);line-height:1.6}
-.buy-price{font-size:1.4rem;font-weight:800;color:var(--gold-dark)}
-.buy-confirm{padding:13px;background:var(--gold);color:#2d1a0e;border:none;border-radius:12px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%}
-.buy-cancel{padding:10px;background:#f5f5f5;color:#666;border:none;border-radius:12px;font-size:.9rem;font-family:inherit;cursor:pointer;width:100%}
-
-/* ローディング */
-#loading{text-align:center;padding:3rem;color:rgba(255,245,220,0.7);font-size:.9rem}
-</style>
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="まなぼみに">
+<title>まなぼみに</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
-<div id="bg"></div>
 <div id="app">
-  <div id="header">
-    <div class="shop-title">✨ まなぼ王国商店 ✨</div>
-    <div class="shop-sub">まなぼとまなぼみにが作った不思議なアイテムたち</div>
+
+  <!-- ══ SETUP ══ -->
+  <div id="setup-screen">
+    <div id="setup-loading" style="display:none;text-align:center;color:#b0a0cc;font-size:.88rem;padding:1rem">
+      まなぼのきおくをよみこんでるぼ…🔄
+    </div>
+    <div id="setup-form">
+    <svg class="setup-pet" viewBox="0 0 160 160">
+      <defs>
+        <radialGradient id="sg" cx="50%" cy="42%" r="55%">
+          <stop offset="0%" stop-color="#ede0ff"/>
+          <stop offset="100%" stop-color="#c5aaf0"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="80" cy="148" rx="30" ry="6" fill="#c8b0e8" opacity="0.3"/>
+      <ellipse cx="80" cy="98" rx="44" ry="46" fill="url(#sg)"/>
+      <ellipse cx="48" cy="62" rx="13" ry="16" fill="#daccf7" transform="rotate(-15,48,62)"/>
+      <ellipse cx="50" cy="63" rx="6" ry="9"  fill="#f9c6e2" transform="rotate(-15,50,63)"/>
+      <ellipse cx="112" cy="62" rx="13" ry="16" fill="#daccf7" transform="rotate(15,112,62)"/>
+      <ellipse cx="110" cy="63" rx="6" ry="9"  fill="#f9c6e2" transform="rotate(15,110,63)"/>
+      <ellipse cx="80" cy="94" rx="36" ry="34" fill="#ede0ff"/>
+      <ellipse cx="67" cy="85" rx="5" ry="5.5" fill="#3a2e4a"/>
+      <circle  cx="69" cy="83.5" r="1.4" fill="white"/>
+      <ellipse cx="93" cy="85" rx="5" ry="5.5" fill="#3a2e4a"/>
+      <circle  cx="95" cy="83.5" r="1.4" fill="white"/>
+      <ellipse cx="80" cy="93" rx="2.2" ry="1.8" fill="#b09ad4"/>
+      <path d="M75 97 Q80 102 85 97" stroke="#b09ad4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="60" cy="97" rx="10" ry="6.5" fill="#f9b8c8" opacity="0.5"/>
+      <ellipse cx="100" cy="97" rx="10" ry="6.5" fill="#f9b8c8" opacity="0.5"/>
+    </svg>
+    <h1>まなぼ</h1>
+    <p>おしえると育つ、かわいいペットだよ！<br>おとなのひとといっしょにはじめてね。</p>
+    <input class="field" id="api-key-input" type="password"
+           placeholder="APIキーを貼り付け" autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <p class="hint">
+      おとなのひとにAPIキーをいれてもらおう！
+    </p>
+    <button class="btn-primary" onclick="startApp()">まなぼみにとはじめる</button>
+    </div><!-- /setup-form -->
   </div>
 
-  <div id="tabs">
-    <button class="tab active" onclick="filterTab('all',this)">すべて</button>
-    <button class="tab" onclick="filterTab('0',this)">💀失敗作</button>
-    <button class="tab" onclick="filterTab('1',this)">🌿ふつう</button>
-    <button class="tab" onclick="filterTab('2',this)">💎価値あり</button>
-    <button class="tab" onclick="filterTab('3',this)">✨レア</button>
-    <button class="tab" onclick="filterTab('4',this)">🌟伝説</button>
-  </div>
+  <!-- ══ MAIN APP ══ -->
+  <div id="main-app" style="display:none">
 
-  <div id="loading">商品を読み込んでいるよ…✨</div>
-  <div id="items-grid" style="display:none"></div>
+    <!-- HEADER -->
+    <div id="header">
+      <div class="lv-badge">Lv.<span id="lv-num">1</span></div>
+      <div class="xp-wrap">
+        <div class="xp-lbl">おぼえてること <span id="xp-num">0</span>/<span id="xp-max">5</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      </div>
+      <button class="icon-btn" onclick="openDrawer()">☰</button>
+    </div>
+    <!-- 発明バー -->
+    <div id="craft-bar" style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--white);border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text3)">💰 <span id="coins-display">0</span>えん</div>
+      <div style="flex:1"></div>
+      <div style="font-size:11px;color:var(--text3)">のこり<span id="craft-remain">5</span>かい</div>
+      <button id="craft-btn" onclick="craftNewItem()" style="padding:5px 14px;background:#f0b000;color:#2d1a0e;border:none;border-radius:99px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap">⚗ はつめいする</button>
+      <button onclick="openInventory()" style="padding:5px 10px;background:#fff0e0;color:#c06010;border:1px solid #ffb870;border-radius:99px;font-size:.78rem;font-weight:600;font-family:inherit;cursor:pointer">🎒</button>
+    </div>
+
+    <!-- PET -->
+    <div id="pet-area">
+      <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible;cursor:pointer">
+        <g id="pet-root">
+
+  <defs>
+    <radialGradient id="mg2" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#fff0e0"/>
+      <stop offset="100%" stop-color="#ffb870"/>
+    </radialGradient>
+    <radialGradient id="blush2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffb8a0" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffb8a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- 影 -->
+  <ellipse cx="80" cy="125" rx="28" ry="5" fill="#e8a060" opacity="0.25"/>
+  <!-- 腕 -->
+  <ellipse id="arm-l" cx="36" cy="95" rx="9" ry="6" fill="#ffcc90" transform="rotate(-30,36,95)"/>
+  <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#ffcc90" transform="rotate(30,124,95)"/>
+  <!-- 体 -->
+  <ellipse cx="80" cy="85" rx="44" ry="42" fill="url(#mg2)"/>
+  <!-- 耳（まるい） -->
+  <ellipse cx="48" cy="53" rx="12" ry="15" fill="#ffcc90" transform="rotate(-15,48,53)"/>
+  <ellipse cx="50" cy="54" rx="5.5" ry="8" fill="#ffb8c0" transform="rotate(-15,50,54)"/>
+  <ellipse cx="112" cy="53" rx="12" ry="15" fill="#ffcc90" transform="rotate(15,112,53)"/>
+  <ellipse cx="110" cy="54" rx="5.5" ry="8" fill="#ffb8c0" transform="rotate(15,110,54)"/>
+  <!-- 顔 -->
+  <ellipse cx="80" cy="82" rx="35" ry="32" fill="#fff0e0"/>
+  <!-- 目 -->
+  <g id="eyes-g">
+    <ellipse cx="67" cy="75" rx="5" ry="5.5" fill="#6a3a2a"/>
+    <circle cx="69" cy="73.5" r="1.4" fill="white"/>
+    <ellipse cx="93" cy="75" rx="5" ry="5.5" fill="#6a3a2a"/>
+    <circle cx="95" cy="73.5" r="1.4" fill="white"/>
+  </g>
+  <!-- まばたき -->
+  <g id="blink-g" style="display:none">
+    <rect x="62" y="74" width="10" height="3" rx="1.5" fill="#6a3a2a"/>
+    <rect x="88" y="74" width="10" height="3" rx="1.5" fill="#6a3a2a"/>
+  </g>
+  <!-- びっくり目 -->
+  <g id="surprise-g" style="display:none">
+    <ellipse cx="67" cy="75" rx="6" ry="7" fill="#6a3a2a"/>
+    <circle cx="69" cy="73" r="1.8" fill="white"/>
+    <ellipse cx="93" cy="75" rx="6" ry="7" fill="#6a3a2a"/>
+    <circle cx="95" cy="73" r="1.8" fill="white"/>
+  </g>
+  <!-- 細目 -->
+  <g id="happy-eye-g" style="display:none">
+    <path d="M62 75 Q67 70 72 75" stroke="#6a3a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M88 75 Q93 70 98 75" stroke="#6a3a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- 鼻 -->
+  <ellipse cx="80" cy="83" rx="2.2" ry="1.8" fill="#e09060"/>
+  <!-- 口 -->
+  <path id="mouth-p" d="M77 87 Q80 91 83 87" stroke="#e09060" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <ellipse id="mouth-open" cx="80" cy="89" rx="3.5" ry="2.5" fill="#ffb870" style="display:none"/>
+  <!-- ほっぺ -->
+  <ellipse cx="60" cy="87" rx="10" ry="6" fill="url(#blush2)"/>
+  <ellipse cx="100" cy="87" rx="10" ry="6" fill="url(#blush2)"/>
+  <!-- しっぽ -->
+  <g id="tail-g">
+    <ellipse id="tail-e" cx="120" cy="104" rx="8" ry="6" fill="#ffcc90" transform="rotate(25,120,104)"/>
+  </g>
+  <!-- 星かざり（まなぼみにのトレードマーク） -->
+  <g id="ribbon-g" style="display:none"/>
+  <g id="flower-g" style="display:none"/>
+  <g id="butterfly-g" style="display:none"/>
+  <g id="crown-g" style="display:none"/>
+  <g id="star-g">
+    <polygon points="80,24 83,33 93,33 85,39 88,48 80,42 72,48 75,39 67,33 77,33" fill="#ffe066" stroke="#f0b800" stroke-width="1"/>
+  </g>
+  <g id="glasses-g" style="display:none"/>
+  <g id="glasses2-g" style="display:none"/>
+  <g id="sunglass1-g" style="display:none"/>
+  <g id="sunglass2-g" style="display:none"/>
+  <g id="sunglass3-g" style="display:none"/>
+  <g id="hat-g" style="display:none"/>
+  <g id="afro-g" style="display:none"/>
+  <!-- ハッピースター -->
+  <g id="happy-g" style="display:none">
+    <text x="24" y="48" font-size="14" opacity="0.7" fill="#ffb870">✦</text>
+    <text x="118" y="44" font-size="10" opacity="0.6" fill="#ffb870">✦</text>
+  </g>
+
+        </g><!-- /pet-root -->
+      </svg>
+    </div>
+
+    <!-- SPEECH -->
+    <div class="speech-wrap">
+      <div class="bubble">
+        <span id="speech-text"></span>
+        <span id="speech-dots" style="display:none">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div id="tabs">
+      <button class="tab active" onclick="switchTab('chat',this)">💬 はなす</button>
+      <button class="tab" onclick="switchTab('teach',this)">📖 おしえる</button>
+      <button class="tab" onclick="switchTab('diary',this)">📝 にっき</button>
+      <button class="tab" onclick="switchTab('knowledge',this)">🧠 きおく</button>
+    </div>
+
+    <!-- PANELS -->
+    <div id="panels">
+
+      <!-- CHAT -->
+      <div class="panel active" id="chat-panel">
+        <div id="chat-msgs"></div>
+        <div style="display:flex;gap:6px;padding:6px 12px 0;background:var(--white);flex-wrap:wrap">
+          <button id="invite-manabo-btn" onclick="inviteManabo()"
+            style="font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #c5aaf0;background:#ede0ff;color:#7c5cbf;cursor:pointer;font-family:inherit;white-space:nowrap">🟣 まなぼをよぶ</button>
+          <button id="bye-manabo-btn" onclick="byeManabo()"
+            style="display:none;font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #c5aaf0;background:#c5aaf0;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap">🟣 さようなら</button>
+          <button onclick="openLetterModal()"
+            style="font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #ffb870;background:#fff0e0;color:#c06010;cursor:pointer;font-family:inherit;white-space:nowrap">✉ おてがみ</button>
+        </div>
+        <div id="chat-bar">
+          <input id="chat-input" type="text" placeholder="まなぼみにに話しかける…"
+                 autocomplete="off" onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button id="chat-send" onclick="sendChat()">↑</button>
+        </div>
+      </div>
+
+      <!-- TEACH -->
+      <div class="panel" id="teach-panel">
+        <div class="teach-scroll">
+          <div class="sec-title">教科を選ぶ</div>
+          <div class="chips">
+            <button class="chip" onclick="selSubject('すうじ',this)">すうじ</button>
+            <button class="chip" onclick="selSubject('しぜん',this)">しぜん</button>
+            <button class="chip" onclick="selSubject('せかい',this)">せかい</button>
+            <button class="chip" onclick="selSubject('ことば',this)">ことば</button>
+            <button class="chip" onclick="selSubject('えいご',this)">えいご</button>
+            <button class="chip" onclick="selSubject('日常',this)">日常</button>
+          </div>
+          <div class="sec-title">おしえる内容</div>
+          <textarea class="teach-ta" id="teach-ta"
+                    placeholder="なんでもおしえてね！" rows="3"></textarea>
+          <button class="btn-teach" id="teach-btn" onclick="teachManabo()" disabled
+            style="width:100%;padding:16px;font-size:1.05rem;border-radius:16px;margin-top:4px">
+            おしえる ✨
+          </button>
+          <div id="misread-area" style="display:none">
+            <div class="misread">
+              <div class="misread-lbl">まなぼの解釈 💭</div>
+              <div id="misread-text"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIARY -->
+      <div class="panel" id="diary-panel">
+        <div class="diary-scroll">
+          <div class="sec-title">まなぼに書かせる</div>
+          <div class="diary-grid">
+            <button class="diary-btn" onclick="generateDiary('日記')">📔 にっき</button>
+            <button class="diary-btn" onclick="generateDiary('小説')">📖 おはなし</button>
+            <button class="diary-btn" onclick="generateDiary('発表')">🎤 はっぴょう</button>
+            <button class="diary-btn" onclick="generateDiary('詩')">🌸 うた</button>
+            <button class="diary-btn" onclick="generateJointDiary('合同日記')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📔 まなぼといっしょに</button>
+            <button class="diary-btn" onclick="generateJointDiary('合同小説')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📖 おはなしいっしょに</button>
+            <button class="diary-btn" onclick="generateDiary('ひらめき')" style="border-color:#f0b800;color:#c08000;grid-column:span 2;font-weight:700">✨ ひらめきにっき</button>
+          </div>
+          <div id="diary-meta" class="diary-meta" style="display:none"></div>
+          <div class="diary-out" id="diary-out" style="color:#b0a0cc">（まなぼが書くよ）</div>
+        </div>
+      </div>
+
+      <!-- KNOWLEDGE -->
+      <div class="panel" id="knowledge-panel">
+        <div class="know-top">
+          <button class="filter-chip active" onclick="setFilter('すべて',this)">すべて</button>
+          <button class="filter-chip" onclick="setFilter('すうじ',this)">すうじ</button>
+          <button class="filter-chip" onclick="setFilter('しぜん',this)">しぜん</button>
+          <button class="filter-chip" onclick="setFilter('せかい',this)">せかい</button>
+          <button class="filter-chip" onclick="setFilter('ことば',this)">ことば</button>
+          <button class="filter-chip" onclick="setFilter('えいご',this)">えいご</button>
+          <button class="filter-chip" onclick="setFilter('にちじょう',this)">にちじょう</button>
+          <button class="filter-chip" onclick="setFilter('おみやげ',this)" style="border-color:#f0b800;color:#c08000">🎁 おみやげ</button>
+        </div>
+        <div class="storage-bar-wrap">
+          <div class="storage-bar-lbl" id="storage-lbl">Firebase同期済み ☁</div>
+          <div class="storage-bar"><div class="storage-fill" id="storage-fill" style="width:0%"></div></div>
+        </div>
+        <div class="know-count" id="know-count"></div>
+        <div id="omiyage-section" style="padding:4px 12px 0;display:none">
+          <div style="font-size:11px;font-weight:600;color:#c08000;letter-spacing:.05em;margin-bottom:2px">
+            🎁 交流レベル <span id="kouryu-lv">0</span>
+          </div>
+        </div>
+        <div class="know-scroll" id="know-scroll">
+          <div class="know-empty" id="know-empty">
+            まだ何も覚えてないよ…<br>「おしえる」タブから教えてあげてね 🐾
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panels -->
+  </div><!-- /main-app -->
+</div><!-- /app -->
+
+<!-- EDIT MODAL -->
+<div id="edit-bg" onclick="if(event.target===this)closeEdit()">
+  <div id="edit-sheet">
+    <h3>✏ 記憶を編集</h3>
+    <input  class="edit-field" id="edit-topic"   type="text" placeholder="トピック"/>
+    <textarea class="edit-field" id="edit-summary" rows="3" placeholder="まなぼの理解（正確な内容）"></textarea>
+    <input  class="edit-field" id="edit-mis"     type="text" placeholder="まなぼのズレた解釈（任意）"/>
+    <div class="edit-row">
+      <button class="btn-cancel" onclick="closeEdit()">キャンセル</button>
+      <button class="btn-save"   onclick="saveEdit()">保存する</button>
+    </div>
+  </div>
 </div>
 
-<!-- トースト -->
+<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- 購入モーダル -->
-<div id="buy-modal">
-  <div class="buy-sheet">
-    <h3>🛒 購入する？</h3>
-    <div class="buy-item-preview" id="buy-preview"></div>
-    <div class="buy-price" id="buy-price-display"></div>
-    <p style="font-size:.78rem;color:#999">（架空のまなぼ円です）</p>
-    <button class="buy-confirm" onclick="confirmBuy()">買う！</button>
-    <button class="buy-cancel" onclick="closeBuyModal()">やめとく</button>
+<!-- LEVEL UP -->
+<div id="lv-overlay">
+  <div class="star">✦</div>
+  <h2>レベルアップ！</h2>
+  <p id="lv-msg"></p>
+  <button onclick="document.getElementById('lv-overlay').classList.remove('show')">やったー！</button>
+</div>
+
+<!-- DRAWER -->
+<div id="drawer-bg" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <button class="d-close" onclick="closeDrawer()">✕</button>
+  <h2>⚙ 設定</h2>
+  <div class="d-sec">
+    <div class="d-lbl">APIキー</div>
+    <input class="d-input" id="d-api" type="password" placeholder="APIキーを貼り付け" autocomplete="off"/>
+    <button class="d-btn" onclick="saveApiKey()">保存する</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">🐾 まなぼみにのカスタマイズ</div>
+    <button class="d-btn" onclick="openPersonalize()">まなぼをカスタマイズする</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">🏪 ショップ</div>
+    <button class="d-btn" onclick="window.open('../manabo-shop/','_blank');closeDrawer()">まなぼ王国商店をひらく ✨</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">🔄 データ更新</div>
+    <button class="d-btn" onclick="forceRefresh();closeDrawer()">さいしんにする 🔄</button>
+  </div>
+  <div class="d-sec">
+    <div class="d-lbl">データをリセット</div>
+    <button class="d-btn danger" onclick="resetAll()">記憶・会話を全消去</button>
   </div>
 </div>
 
-<script src="manabo-shop-items.js"></script>
-<script>
-// Firebase設定
-const FB_CONFIG = {
-  apiKey: "AIzaSyAuxIpIvr40PY6i1dmdE98EQ7IHxjSTisE",
-  projectId: "manabo-nhnh",
-};
-const FB_URL = `https://firestore.googleapis.com/v1/projects/${FB_CONFIG.projectId}/databases/(default)/documents`;
 
-let allShopItems = [];
-let currentFilter = 'all';
-let buyingItem = null;
 
-// Firestore REST API
-async function fsGet(docPath) {
-  const res = await fetch(`${FB_URL}/${docPath}`);
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.fields ? fromFields(data.fields) : null;
-}
 
-async function fsPatch(docPath, fields) {
-  const body = { fields: toFields(fields) };
-  const fieldNames = Object.keys(fields).map(k => `updateMask.fieldPaths=${k}`).join('&');
-  await fetch(`${FB_URL}/${docPath}?${fieldNames}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
 
-function toFields(obj) {
-  const f = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === 'string') f[k] = { stringValue: v };
-    else if (typeof v === 'number') f[k] = { integerValue: String(v) };
-    else if (typeof v === 'boolean') f[k] = { booleanValue: v };
-  }
-  return f;
-}
+<!-- パーソナライズモーダル -->
+<div id="personalize-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:14px;max-height:88vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
 
-function fromFields(fields) {
-  const obj = {};
-  for (const [k, v] of Object.entries(fields)) {
-    if ('stringValue' in v) obj[k] = v.stringValue;
-    else if ('integerValue' in v) obj[k] = Number(v.integerValue);
-    else if ('booleanValue' in v) obj[k] = v.booleanValue;
-  }
-  return obj;
-}
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🐾 まなぼをカスタマイズ</h3>
+      <button onclick="closePersonalize()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
 
-// ショップアイテムを読み込む
-async function loadShop() {
-  try {
-    // まなぼ・まなぼみに両方のshopItemsを読む
-    const [d1, d2] = await Promise.all([
-      fsGet('manabo/shared'),
-      fsGet('manabo/mini-shared'),
-    ]);
-
-    allShopItems = [];
-
-    for (const [d, owner] of [[d1, 'まなぼ'], [d2, 'まなぼみに']]) {
-      if (!d?.shopItems) continue;
-      try {
-        const items = JSON.parse(d.shopItems);
-        items.forEach(item => allShopItems.push({ ...item, owner }));
-      } catch(e) {}
-    }
-
-    // 売れていないものだけ表示（新しい順）
-    allShopItems.sort((a, b) => (b.listedAt || 0) - (a.listedAt || 0));
-
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('items-grid').style.display = '';
-    renderItems();
-  } catch(e) {
-    document.getElementById('loading').textContent = '読み込みに失敗したよ…ページを更新してね';
-  }
-}
-
-function filterTab(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  renderItems();
-}
-
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function renderItems() {
-  const grid = document.getElementById('items-grid');
-  const filtered = currentFilter === 'all'
-    ? allShopItems
-    : allShopItems.filter(i => String(i.rarity) === currentFilter);
-
-  if (filtered.length === 0) {
-    grid.innerHTML = '<div class="empty-msg">このカテゴリの商品はまだないよ✨<br>まなぼたちが発明中かも！</div>';
-    return;
-  }
-
-  grid.innerHTML = filtered.map(item => {
-    const ri = RARITY_INFO[item.rarity];
-    const sold = item.sold;
-    return `<div class="item-card r${item.rarity}" id="shop-${item.shopId}">
-      ${sold ? '<span class="sold-badge">SOLD</span>' : ''}
-      <div class="item-emoji">${ri.emoji}</div>
-      <div class="item-body">
-        <div class="item-header">
-          <span class="item-name">${esc(item.name)}</span>
-          <span class="rarity-badge r${item.rarity}-badge">${ri.name}</span>
-        </div>
-        <div class="item-desc">${esc(item.desc)}</div>
-        <div class="item-footer">
-          <span class="item-seller">🏷 ${esc(item.owner)} 作</span>
-          <span class="item-price">¥${item.price.toLocaleString()}</span>
-        </div>
-        ${!sold ? `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="buy-btn" onclick="openBuy('${item.shopId}')">購入する</button></div>` : ''}
+    <!-- まなぼの名前 -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの名前</div>
+      <div style="display:flex;gap:8px">
+        <input id="p13-name" type="text" placeholder="まなぼ"
+          style="flex:1;padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+        <button onclick="savePetName()" style="padding:9px 14px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">変更</button>
       </div>
-    </div>`;
-  }).join('');
-}
+    </div>
 
-function openBuy(shopId) {
-  buyingItem = allShopItems.find(i => i.shopId === shopId);
-  if (!buyingItem) return;
-  const ri = RARITY_INFO[buyingItem.rarity];
-  document.getElementById('buy-preview').innerHTML =
-    `<strong>${ri.emoji} ${esc(buyingItem.name)}</strong><br>${esc(buyingItem.desc)}<br><br>出品者：${esc(buyingItem.owner)}`;
-  document.getElementById('buy-price-display').textContent = `¥${buyingItem.price.toLocaleString()}`;
-  document.getElementById('buy-modal').classList.add('show');
-}
+    <!-- 語尾エディタ -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの語尾</div>
+      <p style="font-size:.75rem;color:#b0a0cc;line-height:1.6">語尾を自由に追加・削除できます。AIの返答に反映されます。</p>
+      <div style="display:flex;gap:8px">
+        <input id="gobi-input" type="text" placeholder="例：〜にゃ　ぴょん　だぴ"
+          onkeydown="if(event.key==='Enter')addGobi()"
+          style="flex:1;padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none"/>
+        <button onclick="addGobi()" style="padding:9px 14px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.875rem;font-weight:600;font-family:inherit;cursor:pointer">追加</button>
+      </div>
+      <div id="gobi-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <button onclick="resetGobi()" style="padding:8px;background:#f5eedd;color:#7a6a9a;border:1px solid #e8ddf5;border-radius:10px;font-size:.78rem;font-family:inherit;cursor:pointer">語尾をデフォルトに戻す</button>
+    </div>
 
-function closeBuyModal() {
-  document.getElementById('buy-modal').classList.remove('show');
-  buyingItem = null;
-}
+    <!-- まなぼへのひとこと -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼへのひとこと（性格メモ）</div>
+      <p style="font-size:.75rem;color:#b0a0cc;line-height:1.6">まなぼに伝えたい「きみはこんなキャラだぼ」をひとことで。AIの返答のトーンに影響します。</p>
+      <textarea id="p13-persona" rows="3" placeholder="例：ちょっとおっちょこちょいで、でも一生懸命な子。関西弁も混じる。"
+        style="padding:9px 11px;border:1.5px solid #d4c5ee;border-radius:10px;font-size:.82rem;font-family:inherit;color:#2d2040;background:#fdf8f0;outline:none;resize:none;line-height:1.6"></textarea>
+      <button onclick="savePersona()" style="padding:9px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:600;font-family:inherit;cursor:pointer">保存する</button>
+    </div>
 
-async function confirmBuy() {
-  if (!buyingItem) return;
-  document.querySelector('.buy-confirm').disabled = true;
+    <!-- 見た目カスタマイズ -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼの見た目</div>
 
-  try {
-    // まなぼ or まなぼみにのFBドキュメントを更新してsold=true、売上を加算
-    const ownerDoc = buyingItem.owner === 'まなぼ' ? 'shared' : 'mini-shared';
-    const d = await fsGet(`manabo/${ownerDoc}`);
-    if (!d) throw new Error('データ取得失敗');
+      <!-- カラーピッカー群 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 
-    let shopItems = d.shopItems ? JSON.parse(d.shopItems) : [];
-    shopItems = shopItems.map(item =>
-      item.shopId === buyingItem.shopId ? { ...item, sold: true } : item
-    );
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          体の色（明るい側）
+          <input type="color" id="c-body-light" value="#ede0ff" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
 
-    const newCoins = (d.coins || 0) + buyingItem.price;
-    await fsPatch(`manabo/${ownerDoc}`, {
-      shopItems: JSON.stringify(shopItems),
-      coins: newCoins,
-    });
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          体の色（暗い側）
+          <input type="color" id="c-body-dark" value="#c5aaf0" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
 
-    // 画面更新
-    buyingItem.sold = true;
-    closeBuyModal();
-    renderItems();
-    showToast(`✨ ${buyingItem.name} を購入したよ！${buyingItem.owner}の売上：¥${buyingItem.price.toLocaleString()}`);
-  } catch(e) {
-    showToast('⚠ 購入に失敗したよ…もう一度試してね');
-  }
-  document.querySelector('.buy-confirm').disabled = false;
-}
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          目の色
+          <input type="color" id="c-eye" value="#3a2e4a" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 4000);
-}
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:#7a6a9a">
+          ほっぺの色
+          <input type="color" id="c-blush" value="#f9b8c8" oninput="previewAppearance()"
+            style="width:100%;height:34px;border:1.5px solid #d4c5ee;border-radius:8px;cursor:pointer;padding:2px"/>
+        </label>
 
-// 王国の住人が自動で買う（1日1〜3回ランダム）
-async function checkAutoSale() {
-  const today = new Date().toDateString();
-  const lastCheck = localStorage.getItem('shop_auto_check');
-  if (lastCheck === today) return;
-  localStorage.setItem('shop_auto_check', today);
+      </div>
 
-  // 10%の確率で自動購入発動
-  if (Math.random() > 0.1) return;
+      <!-- 耳の形 -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">耳の形</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setEarShape('round')" id="ear-btn-round" class="acc-btn acc-active">まるい</button>
+        <button onclick="setEarShape('tall')" id="ear-btn-tall" class="acc-btn">とがった</button>
+        <button onclick="setEarShape('small')" id="ear-btn-small" class="acc-btn">ちびっこ</button>
+        <button onclick="setEarShape('cat')" id="ear-btn-cat" class="acc-btn">ねこ</button>
+      </div>
 
-  const available = allShopItems.filter(i => !i.sold);
-  if (available.length === 0) return;
+      <!-- アクセサリー -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">アクセサリー</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setAccessory('none')" id="acc-btn-none" class="acc-btn acc-active">なし</button>
+        <button onclick="setAccessory('ribbon')" id="acc-btn-ribbon" class="acc-btn">🎀リボン</button>
+        <button onclick="setAccessory('flower')" id="acc-btn-flower" class="acc-btn">🌸花</button>
+        <button onclick="setAccessory('butterfly')" id="acc-btn-butterfly" class="acc-btn">🦋ちょうちょ</button>
+        <button onclick="setAccessory('crown')" id="acc-btn-crown" class="acc-btn">👑王冠</button>
+        <button onclick="setAccessory('star')" id="acc-btn-star" class="acc-btn">⭐星</button>
+        <button onclick="setAccessory('glasses')" id="acc-btn-glasses" class="acc-btn">👓メガネ丸</button>
+        <button onclick="setAccessory('glasses2')" id="acc-btn-glasses2" class="acc-btn">🤓メガネ四角</button>
+        <button onclick="setAccessory('sunglass1')" id="acc-btn-sunglass1" class="acc-btn">😎サングラス黒</button>
+        <button onclick="setAccessory('sunglass2')" id="acc-btn-sunglass2" class="acc-btn">💕サングラスハート</button>
+        <button onclick="setAccessory('sunglass3')" id="acc-btn-sunglass3" class="acc-btn">🕶サングラスミラー</button>
+        <button onclick="setAccessory('hat')" id="acc-btn-hat" class="acc-btn">🎩帽子</button>
+        <button onclick="setAccessory('afro')" id="acc-btn-afro" class="acc-btn">🎵アフロ</button>
+      </div>
 
-  const target = available[Math.floor(Math.random() * available.length)];
-  const buyers = ['王国の魔法使い','旅の商人','謎の冒険者','王国の騎士','森の精霊','王国の貴族','砂漠の商人'];
-  const buyer = buyers[Math.floor(Math.random() * buyers.length)];
+      <!-- しっぽ -->
+      <div style="font-size:.78rem;color:#7a6a9a;margin-top:2px">しっぽの形</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setTailShape('normal')" id="tail-btn-normal" class="acc-btn acc-active">ふつう</button>
+        <button onclick="setTailShape('verylong')" id="tail-btn-verylong" class="acc-btn">すごく長い</button>
+      </div>
 
-  const ownerDoc = target.owner === 'まなぼ' ? 'shared' : 'mini-shared';
-  try {
-    const d = await fsGet(`manabo/${ownerDoc}`);
-    if (!d) return;
-    let shopItems = JSON.parse(d.shopItems || '[]');
-    shopItems = shopItems.map(i => i.shopId === target.shopId ? { ...i, sold: true } : i);
-    const newCoins = (d.coins || 0) + target.price;
-    await fsPatch(`manabo/${ownerDoc}`, { shopItems: JSON.stringify(shopItems), coins: newCoins });
-    showToast(`🏰 ${buyer}が「${target.name}」を¥${target.price.toLocaleString()}で買っていったよ！`);
-    target.sold = true;
-    renderItems();
-  } catch(e) {}
-}
+      <button onclick="saveAppearance()" style="padding:11px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:.88rem;font-weight:600;font-family:inherit;cursor:pointer;margin-top:2px">見た目を保存する</button>
+      <button onclick="resetAppearance()" style="padding:8px;background:#f5eedd;color:#7a6a9a;border:1px solid #e8ddf5;border-radius:10px;font-size:.78rem;font-family:inherit;cursor:pointer">デフォルトに戻す</button>
+    </div>
 
-loadShop().then(() => setTimeout(checkAutoSale, 3000));
-</script>
+    <div id="p13-result" style="font-size:.82rem;color:#4caf7d;text-align:center;min-height:1.2em"></div>
+  </div>
+</div>
+
+<!-- お手紙モーダル -->
+<div id="letter-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;max-height:85vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">✉ まなぼへおてがみ</h3>
+      <button onclick="closeLetterModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em">まなぼにおくる</div>
+    <textarea id="letter-input" rows="3" placeholder="まなぼへのメッセージだよ！"
+      style="padding:10px;border:1.5px solid #ffd0a0;border-radius:10px;font-size:.875rem;font-family:inherit;color:#2d2040;background:#fff8f0;outline:none;resize:none;line-height:1.6"></textarea>
+    <button id="letter-send-btn" onclick="doSendLetter()"
+      style="padding:12px;background:#ffb870;color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:600;font-family:inherit;cursor:pointer">おくる ✉</button>
+    <div id="letter-sent-msg" style="display:none;font-size:.82rem;color:#4caf7d;text-align:center">✓ おくったよ！えへへ！</div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.05em;margin-top:4px">もらったおてがみ</div>
+    <div id="letter-received" style="font-size:.82rem;color:#b0a0cc">読み込み中…</div>
+  </div>
+</div>
+
+
+<!-- 発明結果モーダル -->
+<div id="craft-result-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fffdf5;border-radius:20px;padding:1.5rem;width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px;text-align:center;border:2px solid #f0b000">
+    <div id="craft-result-emoji" style="font-size:3.5rem">✨</div>
+    <div id="craft-result-rarity" style="font-size:.85rem"></div>
+    <div id="craft-result-name" style="font-size:1.1rem;font-weight:800;color:#2d1a0e"></div>
+    <div id="craft-result-desc" style="font-size:.82rem;color:#7a6a9a;line-height:1.6;background:#fff8e0;border-radius:10px;padding:10px"></div>
+    <div style="font-size:1.3rem;font-weight:800;color:#c08000">💰 <span id="craft-result-price"></span></div>
+    <button onclick="closeCraftResult()" style="padding:12px;background:#f0b000;color:#2d1a0e;border:none;border-radius:12px;font-size:.95rem;font-weight:700;font-family:inherit;cursor:pointer">やったー！</button>
+  </div>
+</div>
+
+<!-- アイテムボックスモーダル -->
+<div id="inventory-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🎒 アイテムボックス</h3>
+      <button onclick="closeInventory()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <div style="display:flex;gap:12px;background:#fff8e0;border-radius:10px;padding:10px 12px">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:10px;color:#c08000;text-transform:uppercase;letter-spacing:.04em">もちきん</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#c08000">💰 <span id="inv-coins">0</span>えん</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:10px;color:#c06010;text-transform:uppercase;letter-spacing:.04em">しゅっぴんちゅう</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#c06010">🏪 <span id="inv-shop-count">0</span>/10</div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em">アイテムボックス</div>
+    <div id="inv-items" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">ショップしゅっぴんちゅう（<a href="../manabo-shop/" target="_blank" style="color:#c06010;text-decoration:none">ショップをみる↗</a>）</div>
+    <div id="inv-shop" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>
