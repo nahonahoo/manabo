@@ -2165,7 +2165,14 @@ async function listItemToShop(inventoryIdx) {
   const shopItem = { ...item, listedAt: Date.now(), sold: false };
   S.shopItems.push(shopItem);
   S.inventory.splice(inventoryIdx, 1);
-  await saveState();
+  try {
+    await saveState();
+    console.log('出品保存成功 shopItems:', S.shopItems.length);
+  } catch(e) {
+    console.error('出品保存失敗:', e);
+    showToast('保存に失敗したぼ…もう一度試してほしいぼ');
+    return;
+  }
   renderInventory();
   showToast(`✨「${item.name}」をショップに出品したぼ！`);
   typeText('ショップに出したぼ！売れるといいんだぼ！');
