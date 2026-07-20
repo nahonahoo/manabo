@@ -2184,8 +2184,8 @@ async function delistFromShop(shopIdx) {
 }
 
 function renderInventory() {
-  const el = document.getElementById('inventory-list');
-  if (!el) return;
+  // inv-itemsが存在しなければモーダルが開いていない
+  if (!document.getElementById('inv-items')) return;
 
   // コインと統計
   document.getElementById('inv-coins').textContent = S.coins.toLocaleString();
