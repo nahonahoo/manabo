@@ -415,31 +415,3 @@ function checkNPCBuy(item) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-function getRarityWeights(score) {
-  if (score <= 2)  return [88, 11, 1,   0,    0];
-  if (score <= 5)  return [78, 18, 3,   1,    0];
-  if (score <= 10) return [65, 27, 6,   1.8,  0.2];
-  if (score <= 18) return [52, 32, 11,  4,    1];
-  if (score <= 30) return [40, 35, 17,  6,    2];
-  if (score <= 50) return [28, 36, 22,  10,   4];
-  return               [18, 32, 28,  16,   6];
-}
-
-function craftItem(knowledgeLv, kouryuLv) {
-  const score = knowledgeLv + kouryuLv;
-  const weights = getRarityWeights(score);
-  const total = weights.reduce((a,b)=>a+b,0);
-  let rand = Math.random() * total;
-  let targetRarity = 0;
-  for (let i=0;i<weights.length;i++) { rand-=weights[i]; if(rand<=0){targetRarity=i;break;} }
-  const pool = ITEMS.filter(item => item.rarity === targetRarity);
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-const RARITY_INFO = [
-  {name:'失敗作',color:'#9e9e9e',bg:'#f5f5f5',emoji:'💀'},
-  {name:'ふつう',color:'#4caf7d',bg:'#e8f5ee',emoji:'🌿'},
-  {name:'価値あり',color:'#1060a0',bg:'#e0f0ff',emoji:'💎'},
-  {name:'レア',color:'#9c27b0',bg:'#f3e5f5',emoji:'✨'},
-  {name:'伝説',color:'#f0b000',bg:'#fff8e0',emoji:'🌟'},
-];
