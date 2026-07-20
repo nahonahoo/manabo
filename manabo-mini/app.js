@@ -318,12 +318,14 @@ const ITEMS = [
 // レアリティ確率テーブル（知識Lv×交流Lv合計スコアで重みが変わる）
 function getRarityWeights(score) {
   // score = 知識Lv + 交流Lv（おみやげ数）
-  if (score <= 3)  return [70, 25, 4, 1, 0];    // 失敗多め
-  if (score <= 8)  return [50, 35, 12, 2, 1];
-  if (score <= 15) return [35, 40, 18, 6, 1];
-  if (score <= 25) return [25, 38, 25, 10, 2];
-  if (score <= 40) return [15, 32, 30, 18, 5];
-  return               [8,  25, 32, 25, 10];   // 高レベル
+  // 伝説はスコア20以上でやっと0.3%。最高レベルでも2%のシビア設定
+  if (score <= 3)  return [90,   9,    1,    0,     0];
+  if (score <= 6)  return [82,   15,   2.5,  0.5,   0];
+  if (score <= 12) return [70,   23,   5.5,  1.4,   0.1];
+  if (score <= 20) return [58,   30,   9,    2.7,   0.3];
+  if (score <= 35) return [45,   34,   15,   5.2,   0.8];
+  if (score <= 55) return [30,   35,   22,   11,    2];
+  return               [20,   30,   28,   20,    2];
 }
 
 // 発明：ランダムにアイテムを1個選ぶ（レアリティ重み付き）
@@ -2067,9 +2069,11 @@ async function craftNewItem() {
   const item = craftItem(S.level, S.kouryuLv);
   const ri = RARITY_INFO[item.rarity];
   S.craftCount++;
-  S.inventory.push({ ...item, shopId: crypto.randomUUID(), listedAt: null, sold: false, craftedAt: Date.now() });
-  await saveState();
+  const newItem = { ...item, shopId: crypto.randomUUID(), listedAt: null, sold: false, craftedAt: Date.now() };
+  S.inventory.push(newItem);
+  updateHeader();
   renderInventory();
+  saveState().catch(e => console.warn('save error', e));
   document.getElementById('craft-result-modal').style.display = 'flex';
   document.getElementById('craft-result-emoji').textContent = ri.emoji;
   document.getElementById('craft-result-name').textContent = item.name;
