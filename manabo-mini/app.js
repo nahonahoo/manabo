@@ -1151,16 +1151,23 @@ async function generateDiary(type) {
 
   try {
     const raw = await callGemini(sys, [{ role: 'user', parts: [{ text: `${type}を書いて` }] }]);
-    document.getElementById('diary-out').textContent = raw.trim();
+    const content = raw.trim();
+    document.getElementById('diary-out').textContent = content;
     const meta = document.getElementById('diary-meta');
-    meta.textContent = `まなぼが ${new Date().toLocaleDateString('ja-JP')} に書いた${type}`;
+    meta.textContent = `${S.petName}が ${new Date().toLocaleDateString('ja-JP')} に書いた${type}`;
     meta.style.display = '';
     bounce();
     showHappy(true);
     const lines = { 日記: 'かいた！みて！（どや顔）', 小説: 'しょうせつかいた…すごい？', 発表: 'はっぴょうするよ！（ドキドキ）', 詩: 'うた…つくったよ…' };
-    typeText(lines[type] || 'かいたよ！');
+    typeText(lines[type] || 'かいたよ！えへへ！');
+
+    S._lastWork = { content, type };
+    if (['日記','小説','詩','にっき','おはなし','うた'].includes(type)) {
+      const btn = document.getElementById('diary-sell-btn');
+      if (btn) { btn.textContent = `📖 この${type}をショップにだす`; btn.style.display = ''; }
+    }
   } catch (e) {
-    document.getElementById('diary-out').textContent = '書けなかった……ごめんね（ぽかん）';
+    document.getElementById('diary-out').textContent = 'かけなかった……ごめんね（ぽかん）';
   }
 }
 
@@ -2140,3 +2147,54 @@ function renderInventory() {
 }
 function openInventory() { document.getElementById('inventory-modal').style.display='flex'; renderInventory(); }
 function closeInventory() { document.getElementById('inventory-modal').style.display='none'; }
+
+// 作品を評価して出品（まなぼみに版）
+async function sellDiaryWork() {
+  const work = S._lastWork;
+  if (!work) return;
+  const btn = document.getElementById('diary-sell-btn');
+  btn.disabled = true;
+  btn.textContent = 'ひょうかちゅう…';
+  typeText('ひょうかしてもらってるよ…わくわく！');
+
+  const evalSys = `以下の文章を評価してください（幼稚園〜小1向けのペットが書いた作品です）。
+評価基準：「知識の使い方のユニークさ」「かわいいキャラクター表現」「読んで面白いか」の3点。
+JSONのみ（コードブロック不要）:
+{"score":1〜5の整数,"title":"作品タイトル（20字以内・かわいくセンスよく）","reason":"評価理由1文"}`;
+
+  try {
+    const raw = await callGemini(evalSys, [{ role:'user', parts:[{ text: work.content }] }]);
+    const result = parseJSON(raw);
+    const score = Math.max(1, Math.min(5, result.score || 1));
+    const title = result.title || `${S.petName}の${work.type}`;
+    const rarityMap = [null,1,1,2,3,4];
+    const priceRanges = [null,[50,200],[300,800],[1000,3000],[5000,15000],[20000,99999]];
+    const rarity = rarityMap[score];
+    const [pmin,pmax] = priceRanges[score];
+    const price = Math.floor(Math.random()*(pmax-pmin+1))+pmin;
+
+    const workItem = {
+      id: 9000+Math.floor(Math.random()*999),
+      name: title,
+      desc: `${S.petName}が書いた${work.type}。「${work.content.slice(0,30)}…」`,
+      cat:'本', rarity, price,
+      shopId: crypto.randomUUID(),
+      listedAt:null, sold:false, craftedAt:Date.now(), isWork:true,
+    };
+    S.inventory.push(workItem);
+    await saveState();
+    renderInventory();
+
+    const ri = RARITY_INFO[rarity];
+    const stars = '★'.repeat(score)+'☆'.repeat(5-score);
+    showToast(`${ri.emoji}「${title}」${stars} ¥${price.toLocaleString()}！アイテムボックスにはいったよ！`);
+    typeText(score>=4 ? `わあ！さいこう！「${title}」！えへへ！！` : score>=3 ? `やった！「${title}」できた！` : `「${title}」…まあまあかな？えへへ`);
+    bounce();
+    btn.style.display = 'none';
+    S._lastWork = null;
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = `📖 この${work.type}をショップにだす`;
+    showToast('ひょうかできなかったよ…もう一かいおしてね！');
+  }
+}
