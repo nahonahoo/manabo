@@ -111,6 +111,8 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
   </div>
 
   <div id="loading">商品を読み込んでいるよ…✨</div>
+  <!-- 来客ログ -->
+  <div id="visitor-log" style="display:none;width:100%;max-width:480px;padding:0 12px;margin-bottom:8px;background:rgba(0,0,0,0.45);border-radius:14px;border:1px solid rgba(240,176,0,0.3);padding:12px 14px"></div>
   <div id="items-grid" style="display:none"></div>
 </div>
 
@@ -373,24 +375,41 @@ async function checkNPCAutoSale() {
   if (activeNPCs.length === 0) { await checkNewSales(); return; }
 
   const purchases = [];
-  for (const item of available) {
-    // レア度によって購入チェック確率を変える
-    // 失敗作35% → ふつう25% → 価値あり18% → レア10% → 伝説4%
-    const checkProbs = [0.35, 0.25, 0.18, 0.10, 0.04];
-    const prob = checkProbs[item.rarity] ?? 0.20;
-    if (Math.random() > prob) continue;
-    // アクティブNPCの中から相性チェック
-    const candidates = activeNPCs.filter(npc => {
+  const missVisits = []; // 来たけど買わなかった訪問者
+
+  // アクティブNPCのうち何人かがフラッと来店する（買うかどうかは別）
+  const visitors = activeNPCs
+    .filter(() => Math.random() < 0.35) // 35%の確率で来店
+    .slice(0, 4); // 最大4人
+
+  for (const npc of visitors) {
+    // この人が欲しそうなアイテムが出品されているか
+    const wantedItems = available.filter(item => {
       const catMatch = npc.likes.some(l => item.cat && item.cat.includes(l)) || npc.likes.includes(item.cat);
       const rarityMatch = npc.likeRarity.includes(item.rarity);
       const priceOk = item.price >= npc.budget[0] && item.price <= npc.budget[1];
       return catMatch && rarityMatch && priceOk;
     });
-    if (candidates.length > 0) {
-      const npc = candidates[Math.floor(Math.random() * candidates.length)];
-      purchases.push({ item, npc });
+
+    if (wantedItems.length > 0) {
+      // 欲しいものがある → 購入確率チェック
+      const item = wantedItems[Math.floor(Math.random() * wantedItems.length)];
+      const checkProbs = [0.35, 0.25, 0.18, 0.10, 0.04];
+      const prob = checkProbs[item.rarity] ?? 0.20;
+      if (Math.random() < prob) {
+        purchases.push({ item, npc });
+      } else {
+        // 来たけど買わなかった（気に入らなかった）
+        missVisits.push({ npc, reason: 'almost', item });
+      }
+    } else {
+      // 欲しいものがない → 手ぶらで帰る
+      missVisits.push({ npc, reason: 'nothing' });
     }
   }
+
+  // 来客ログを表示（購入後に表示）
+  setTimeout(() => showMissVisits(missVisits), purchases.length > 0 ? 8000 : 1000);
 
   // 最大2件処理
   for (const { item, npc } of purchases.slice(0, 2)) {
@@ -438,6 +457,92 @@ async function checkNewSales() {
   }).join('　／　');
   document.body.appendChild(banner);
   setTimeout(() => banner.remove(), 8000);
+}
+
+// 来たけど買わなかった訪問者ログ
+const MISS_MSGS = {
+  nothing: [
+    '「うーん、欲しいものがないなあ…」',
+    '「今日は合うものがなかった。また来よう。」',
+    '「品揃えが違う…残念。」',
+    '「探していたものと違った。出直してくる。」',
+    '「今日は縁がなかったか…」',
+  ],
+  almost: [
+    '「惜しい！もう少し安ければ…」',
+    '「気になったけど今日は見送り。」',
+    '「品質が…もう一声ほしかった。」',
+    '「欲しいけど予算オーバー！」',
+    '「いいものだけど、今日はやめておく。」',
+  ],
+};
+
+// 冷やかし客・通りすがりリスト
+const LOOKERS = [
+  { name:'野良猫', emoji:'🐱', msg:'（じーっと商品を眺めてから去っていった）', hint:'' },
+  { name:'野良猫', emoji:'🐱', msg:'（商品のにおいをかいで、気に入らなかったようだ）', hint:'' },
+  { name:'野良犬', emoji:'🐕', msg:'（しっぽを振りながら入ってきて、何も買わずに出ていった）', hint:'' },
+  { name:'野良犬', emoji:'🐕', msg:'（ひとしきり走り回ってから去っていった。商品は無事）', hint:'' },
+  { name:'迷子の子供', emoji:'👦', msg:'「ここどこ…？ねえおにいさん、駅はどっち？」（商品には興味なし）', hint:'' },
+  { name:'迷子の子供', emoji:'👧', msg:'「すごーい！でもお金ないや。またね！」（走って去った）', hint:'' },
+  { name:'まなぼの友達', emoji:'⭐', msg:'「まなぼがお店やってるって聞いてきたよ！見るだけ見ていい？」', hint:'' },
+  { name:'まなぼみにの友達', emoji:'🌟', msg:'「みにちゃんのお店だ！かわいいー！でもお金持ってない！」', hint:'' },
+  { name:'通りすがりのおじさん', emoji:'👴', msg:'「ふむふむ…（何も買わずに立ち去る）」', hint:'' },
+  { name:'王国の鳩', emoji:'🕊️', msg:'（商品の上に一瞬とまって、何事もなかったように飛び去った）', hint:'' },
+  { name:'透明な何か', emoji:'👀', msg:'（気配はあったが、姿は見えなかった）', hint:'' },
+  { name:'王国の郵便屋', emoji:'📮', msg:'「配達先を間違えました。失礼しました。」（何も買わずに去る）', hint:'' },
+  { name:'見習い魔法使い', emoji:'🧑‍🎓', msg:'「勉強のために見学させてください！（写真撮ってもいいですか？）」', hint:'' },
+  { name:'ふらっと来た旅人', emoji:'🚶', msg:'「いい品揃えですね〜（買わないけど）」', hint:'' },
+  { name:'王国の衛兵', emoji:'💂', msg:'「不審な点はないか確認に参りました。問題なし。（去る）」', hint:'' },
+  { name:'まなぼ', emoji:'🟣', msg:'「ぎゃぼー！自分のお店来たぼ！なんか不思議な気分だぼ！（何も買わずに去る）」', hint:'' },
+  { name:'まなぼみに', emoji:'🟠', msg:'「わあ！お店だ！えへへ！でもお金ないよ〜！（走って去る）」', hint:'' },
+  { name:'謎の子猫', emoji:'🐈', msg:'「にゃ。（去る）」', hint:'' },
+  { name:'王国のカラス', emoji:'🐦‍⬛', msg:'（光るものをじっと見つめていたが、持っていけなかった）', hint:'' },
+  { name:'隣のお店の人', emoji:'🏪', msg:'「偵察に来ました。参考になりました。（ダッシュで去る）」', hint:'' },
+];
+
+function showMissVisits(visits) {
+  if (!visits || visits.length === 0) return;
+  const log = document.getElementById('visitor-log');
+  if (!log) return;
+
+  // 冷やかし客をランダムで0〜2人混入
+  const numLookers = Math.floor(Math.random() * 3);
+  const lookers = [];
+  for (let i = 0; i < numLookers; i++) {
+    const l = LOOKERS[Math.floor(Math.random() * LOOKERS.length)];
+    lookers.push({ npc: { name: l.name, emoji: l.emoji }, reason: 'looker', msg: l.msg });
+  }
+  const allVisits = [...visits, ...lookers].sort(() => Math.random() - 0.5);
+
+  const entries = allVisits.map(v => {
+    // 冷やかし客・NPC個別セリフ・デフォルトの順で
+    let msg;
+    if (v.reason === 'looker') {
+      msg = v.msg;
+    } else if (v.npc.miss_msg) {
+      msg = v.npc.miss_msg;
+    } else {
+      const msgs = MISS_MSGS[v.reason] || MISS_MSGS.nothing;
+      msg = msgs[Math.floor(Math.random() * msgs.length)];
+    }
+    const itemHint = v.item ? `（${v.item.cat}が欲しそうだった）` : '';
+    return `<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1)">
+      <div style="font-size:1.4rem;flex-shrink:0">${v.npc.emoji}</div>
+      <div>
+        <div style="font-size:.82rem;font-weight:600;color:#fff0d0">${v.npc.name}</div>
+        <div style="font-size:.75rem;color:#c8a870;font-style:italic">${msg}</div>
+        ${itemHint ? `<div style="font-size:.68rem;color:#a08050;margin-top:2px">${itemHint}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  log.innerHTML = `
+    <div style="font-size:.72rem;font-weight:600;color:#f0b000;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">
+      👥 今日の来客（買わずに帰った）
+    </div>
+    ${entries}`;
+  log.style.display = '';
 }
 
 function showNPCBuyToast(npc, item, msg) {
