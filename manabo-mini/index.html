@@ -67,6 +67,14 @@
       </div>
       <button class="icon-btn" onclick="openDrawer()">☰</button>
     </div>
+    <!-- 発明バー -->
+    <div id="craft-bar" style="display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--white);border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--text3)">💰 <span id="coins-display">0</span>えん</div>
+      <div style="flex:1"></div>
+      <div style="font-size:11px;color:var(--text3)">のこり<span id="craft-remain">5</span>かい</div>
+      <button id="craft-btn" onclick="craftNewItem()" style="padding:5px 14px;background:#f0b000;color:#2d1a0e;border:none;border-radius:99px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap">⚗ はつめいする</button>
+      <button onclick="openInventory()" style="padding:5px 10px;background:#fff0e0;color:#c06010;border:1px solid #ffb870;border-radius:99px;font-size:.78rem;font-weight:600;font-family:inherit;cursor:pointer">🎒</button>
+    </div>
 
     <!-- PET -->
     <div id="pet-area">
@@ -316,6 +324,10 @@
     <button class="d-btn" onclick="openPersonalize()">まなぼをカスタマイズする</button>
   </div>
   <div class="d-sec">
+    <div class="d-lbl">🏪 ショップ</div>
+    <button class="d-btn" onclick="window.open('../../manabo-shop/','_blank');closeDrawer()">まなぼ王国商店をひらく ✨</button>
+  </div>
+  <div class="d-sec">
     <div class="d-lbl">🔄 データ更新</div>
     <button class="d-btn" onclick="forceRefresh();closeDrawer()">さいしんにする 🔄</button>
   </div>
@@ -464,9 +476,46 @@
   </div>
 </div>
 
+
+<!-- 発明結果モーダル -->
+<div id="craft-result-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fffdf5;border-radius:20px;padding:1.5rem;width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px;text-align:center;border:2px solid #f0b000">
+    <div id="craft-result-emoji" style="font-size:3.5rem">✨</div>
+    <div id="craft-result-rarity" style="font-size:.85rem"></div>
+    <div id="craft-result-name" style="font-size:1.1rem;font-weight:800;color:#2d1a0e"></div>
+    <div id="craft-result-desc" style="font-size:.82rem;color:#7a6a9a;line-height:1.6;background:#fff8e0;border-radius:10px;padding:10px"></div>
+    <div style="font-size:1.3rem;font-weight:800;color:#c08000">💰 <span id="craft-result-price"></span></div>
+    <button onclick="closeCraftResult()" style="padding:12px;background:#f0b000;color:#2d1a0e;border:none;border-radius:12px;font-size:.95rem;font-weight:700;font-family:inherit;cursor:pointer">やったー！</button>
+  </div>
+</div>
+
+<!-- アイテムボックスモーダル -->
+<div id="inventory-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🎒 アイテムボックス</h3>
+      <button onclick="closeInventory()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <div style="display:flex;gap:12px;background:#fff8e0;border-radius:10px;padding:10px 12px">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:10px;color:#c08000;text-transform:uppercase;letter-spacing:.04em">もちきん</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#c08000">💰 <span id="inv-coins">0</span>えん</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:10px;color:#c06010;text-transform:uppercase;letter-spacing:.04em">しゅっぴんちゅう</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#c06010">🏪 <span id="inv-shop-count">0</span>/10</div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em">アイテムボックス</div>
+    <div id="inv-items" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">ショップしゅっぴんちゅう（<a href="../../manabo-shop/" target="_blank" style="color:#c06010;text-decoration:none">ショップをみる↗</a>）</div>
+    <div id="inv-shop" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=14"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>
