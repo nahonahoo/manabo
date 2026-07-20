@@ -1112,9 +1112,9 @@ async function generateDiary(type) {
   }
   document.getElementById('diary-out').textContent = '書いてる……';
   document.getElementById('diary-meta').style.display = 'none';
+  document.getElementById('diary-sell-btn').style.display = 'none';
   bounce();
 
-  // ランダムに最大6件ピックして多様性を出す
   const picks = [...S.knowledge].sort(() => Math.random() - .5).slice(0, 6);
   const topics = picks.map(k => `[${k.subject}]${k.topic}：${k.summary}（誤解：${k.misunderstanding || 'なし'}）`).join('\n');
 
@@ -1129,7 +1129,8 @@ async function generateDiary(type) {
 
   try {
     const raw = await callGemini(sys, [{ role: 'user', parts: [{ text: `${type}を書いて` }] }]);
-    document.getElementById('diary-out').textContent = raw.trim();
+    const content = raw.trim();
+    document.getElementById('diary-out').textContent = content;
     const meta = document.getElementById('diary-meta');
     meta.textContent = `まなぼが ${new Date().toLocaleDateString('ja-JP')} に書いた${type}`;
     meta.style.display = '';
@@ -1137,8 +1138,78 @@ async function generateDiary(type) {
     showHappy(true);
     const lines = { 日記: 'かいた！みて！（どや顔）', 小説: 'しょうせつかいた…すごい？', 発表: 'はっぴょうするよ！（ドキドキ）', 詩: 'うた…つくったよ…' };
     typeText(lines[type] || 'かいたよ！');
+
+    // 作品をS._lastWorkに一時保存（出品用）
+    S._lastWork = { content, type, topics };
+
+    // 出品ボタンを表示（日記・小説・詩のみ）
+    if (['日記','小説','詩'].includes(type)) {
+      const btn = document.getElementById('diary-sell-btn');
+      btn.textContent = `📖 この${type}をショップに出品する`;
+      btn.style.display = '';
+    }
   } catch (e) {
     document.getElementById('diary-out').textContent = '書けなかった……ごめんね（ぽかん）';
+  }
+}
+
+// 作品をAIに評価させて出品
+async function sellDiaryWork() {
+  const work = S._lastWork;
+  if (!work) return;
+
+  const btn = document.getElementById('diary-sell-btn');
+  btn.disabled = true;
+  btn.textContent = '評価中……';
+  typeText('はんだんちゅうだぼ…ぼぼ…✨');
+
+  const evalSys = `以下の文章を評価してください。評価基準：「知識の使い方のユニークさ」「まなぼらしいキャラクター表現」「読んで面白いか」「知識が活かされているか」の4点。
+JSONのみ返す（コードブロック不要）:
+{"score":1〜5の整数,"title":"作品タイトル（20字以内・センスよく）","reason":"評価理由1文"}`;
+
+  try {
+    const raw = await callGemini(evalSys, [{ role:'user', parts:[{ text: work.content }] }]);
+    const result = parseJSON(raw);
+    const score = Math.max(1, Math.min(5, result.score || 1));
+    const title = result.title || `まなぼの${work.type}`;
+
+    // スコア→レアリティ・価格
+    const rarityMap = [null, 1, 1, 2, 3, 4];
+    const priceRanges = [null, [50,200], [300,800], [1000,3000], [5000,15000], [20000,99999]];
+    const rarity = rarityMap[score];
+    const [pmin, pmax] = priceRanges[score];
+    const price = Math.floor(Math.random() * (pmax - pmin + 1)) + pmin;
+
+    // アイテムとしてinventoryに追加
+    const workItem = {
+      id: 9000 + Math.floor(Math.random() * 999),
+      name: title,
+      desc: `まなぼが書いた${work.type}。「${work.content.slice(0,30)}…」`,
+      cat: '本',
+      rarity,
+      price,
+      shopId: crypto.randomUUID(),
+      listedAt: null,
+      sold: false,
+      craftedAt: Date.now(),
+      isWork: true,
+    };
+
+    S.inventory.push(workItem);
+    await saveState();
+    renderInventory();
+
+    const ri = RARITY_INFO[rarity];
+    const scoreStars = '★'.repeat(score) + '☆'.repeat(5-score);
+    showToast(`${ri.emoji}「${title}」${scoreStars} ¥${price.toLocaleString()}でアイテムボックスに追加したぼ！`);
+    typeText(score >= 4 ? `ぎゃぼー！傑作だぼ！「${title}」！！` : score >= 3 ? `おお！「${title}」ができたぼ！` : `「${title}」…まあまあだぼ。`);
+    bounce();
+    btn.style.display = 'none';
+    S._lastWork = null;
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = `📖 この${work.type}をショップに出品する`;
+    showToast('評価できなかったぼ…もう一回押してみてほしいぼ');
   }
 }
 
