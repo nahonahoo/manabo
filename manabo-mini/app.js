@@ -2149,7 +2149,21 @@ function renderInventory() {
         </div>`;
       }).join('');
 }
-function openInventory() { document.getElementById('inventory-modal').style.display='flex'; renderInventory(); }
+async function openInventory() {
+  document.getElementById('inventory-modal').style.display='flex';
+  try {
+    const db = getDB();
+    const snap = await db.collection('manabo').doc(MANABO_ID).get({ source: 'server' });
+    if (snap.exists) {
+      const d = snap.data();
+      S.shopItems = d.shopItems ? JSON.parse(d.shopItems) : [];
+      S.inventory = d.inventory ? JSON.parse(d.inventory) : [];
+      S.coins = d.coins || S.coins;
+      updateHeader();
+    }
+  } catch(e) {}
+  renderInventory();
+}
 function closeInventory() { document.getElementById('inventory-modal').style.display='none'; }
 
 // 作品を評価して出品（まなぼみに版）
