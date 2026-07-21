@@ -649,8 +649,9 @@ function updateHeader() {
   if (coinsEl) coinsEl.textContent = S.coins.toLocaleString();
   const craftEl = document.getElementById('craft-remain');
   if (craftEl) {
-    const today = new Date().toDateString();
-    const remain = S.craftDate === today ? Math.max(0, 2 - S.craftCount) : 5;
+    const lastCraftTs = S.craftDate ? Number(S.craftDate) : 0;
+    const elapsed = Date.now() - lastCraftTs;
+    const remain = elapsed >= 24*60*60*1000 ? 2 : Math.max(0, 2 - S.craftCount);
     craftEl.textContent = remain;
   }
 }
@@ -2066,8 +2067,10 @@ function checkKouryuUnlock(prevLv, newLv) {
 
 // ── アイテムクリエーション（まなぼみに版） ──
 async function craftNewItem() {
-  const today = new Date().toDateString();
-  if (S.craftDate !== today) { S.craftCount = 0; S.craftDate = today; }
+  // 最後の発明から24時間経過していたらリセット
+  const now = Date.now();
+  const lastCraft = S.craftDate ? Number(S.craftDate) : 0;
+  if (now - lastCraft >= 24 * 60 * 60 * 1000) { S.craftCount = 0; }
   if (S.craftCount >= 2) { showToast('きょうはもう2かいはつめいしたよ！あしたまたね！'); return; }
   const btn = document.getElementById('craft-btn');
   if (btn) btn.disabled = true;
@@ -2076,6 +2079,7 @@ async function craftNewItem() {
   const item = craftItem(S.level, S.kouryuLv);
   const ri = RARITY_INFO[item.rarity];
   S.craftCount++;
+  if (S.craftCount === 1) S.craftDate = String(Date.now()); // 最初の発明時刻を記録
   const newItem = { ...item, shopId: crypto.randomUUID(), listedAt: null, sold: false, craftedAt: Date.now() };
   S.inventory.push(newItem);
   updateHeader();
@@ -2157,8 +2161,14 @@ async function sellDiaryWork() {
   btn.textContent = 'ひょうかちゅう…';
   typeText('ひょうかしてもらってるよ…わくわく！');
 
-  const evalSys = `以下の文章を評価してください（幼稚園〜小1向けのペットが書いた作品です）。
-評価基準：「知識の使い方のユニークさ」「かわいいキャラクター表現」「読んで面白いか」の3点。
+  const evalSys = `以下の幼児向けペットが書いた文章を評価してください。
+評価基準（厳しめに）：
+- ★1：知識がほとんど使われていない
+- ★2：知識は少し使われている
+- ★3：知識を上手く使っていて面白い（ここが標準）
+- ★4：知識の使い方が光る・かわいいキャラ表現も素晴らしい（めったに出ない）
+- ★5：読んでほっこりする本当の傑作（非常に稀）
+★4以上は滅多に出さないこと。
 JSONのみ（コードブロック不要）:
 {"score":1〜5の整数,"title":"作品タイトル（20字以内・かわいくセンスよく）","reason":"評価理由1文"}`;
 
@@ -2168,7 +2178,7 @@ JSONのみ（コードブロック不要）:
     const score = Math.max(1, Math.min(5, result.score || 1));
     const title = result.title || `${S.petName}の${work.type}`;
     const rarityMap = [null,1,1,2,3,4];
-    const priceRanges = [null,[50,200],[300,800],[1000,3000],[5000,15000],[20000,99999]];
+    const priceRanges = [null,[3,30],[50,150],[200,600],[800,2500],[3000,10000]];
     const rarity = rarityMap[score];
     const [pmin,pmax] = priceRanges[score];
     const price = Math.floor(Math.random()*(pmax-pmin+1))+pmin;
