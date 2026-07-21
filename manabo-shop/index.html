@@ -61,10 +61,8 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
 .item-price{font-size:1rem;font-weight:800;color:var(--gold-dark)}
 .sold-badge{position:absolute;top:10px;right:10px;background:#c03030;color:white;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:99px}
 
-/* 購入ボタン */
-.buy-btn{padding:5px 14px;background:var(--gold);color:#2d1a0e;border:none;border-radius:99px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
-.buy-btn:active{opacity:.8}
-.buy-btn:disabled{background:#ccc;color:#888;cursor:not-allowed}
+
+
 
 /* 空メッセージ */
 .empty-msg{text-align:center;padding:3rem 1rem;color:rgba(255,245,220,0.6);font-size:.9rem;line-height:2}
@@ -73,15 +71,8 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
 #toast{position:fixed;bottom:calc(20px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:rgba(255,245,220,0.95);border:2px solid var(--gold);border-radius:16px;padding:10px 20px;font-size:.85rem;color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;transition:all .3s;z-index:100;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* 購入モーダル */
-#buy-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;padding:20px}
-#buy-modal.show{display:flex}
-.buy-sheet{background:var(--white);border-radius:20px;padding:1.5rem;width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;text-align:center}
-.buy-sheet h3{font-size:1.1rem;font-weight:700;color:var(--text)}
-.buy-item-preview{background:var(--gold-light);border-radius:12px;padding:12px;font-size:.85rem;color:var(--text2);line-height:1.6}
-.buy-price{font-size:1.4rem;font-weight:800;color:var(--gold-dark)}
-.buy-confirm{padding:13px;background:var(--gold);color:#2d1a0e;border:none;border-radius:12px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%}
-.buy-cancel{padding:10px;background:#f5f5f5;color:#666;border:none;border-radius:12px;font-size:.9rem;font-family:inherit;cursor:pointer;width:100%}
+
+
 
 /* ローディング */
 #loading{text-align:center;padding:3rem;color:rgba(255,245,220,0.7);font-size:.9rem}
@@ -119,17 +110,7 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
 <!-- トースト -->
 <div id="toast"></div>
 
-<!-- 購入モーダル -->
-<div id="buy-modal">
-  <div class="buy-sheet">
-    <h3>🛒 購入する？</h3>
-    <div class="buy-item-preview" id="buy-preview"></div>
-    <div class="buy-price" id="buy-price-display"></div>
-    <p style="font-size:.78rem;color:#999">（架空のまなぼ円です）</p>
-    <button class="buy-confirm" onclick="confirmBuy()">買う！</button>
-    <button class="buy-cancel" onclick="closeBuyModal()">やめとく</button>
-  </div>
-</div>
+
 
 <script src="shop-data.js"></script>
 <script>
@@ -142,7 +123,6 @@ const FB_URL = `https://firestore.googleapis.com/v1/projects/${FB_CONFIG.project
 
 let allShopItems = [];
 let currentFilter = 'all';
-let buyingItem = null;
 
 // Firestore REST API
 async function fsGet(docPath) {
@@ -264,58 +244,13 @@ function renderItems() {
           <span class="item-price">¥${item.price.toLocaleString()}</span>
         </div>
         ${buyerInfo}
-        ${!sold ? `<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="buy-btn" onclick="openBuy('${item.shopId}')">購入する</button></div>` : ''}
+
       </div>
     </div>`;
   }).join('');
 }
 
-function openBuy(shopId) {
-  buyingItem = allShopItems.find(i => i.shopId === shopId);
-  if (!buyingItem) return;
-  const ri = RARITY_INFO[buyingItem.rarity];
-  document.getElementById('buy-preview').innerHTML =
-    `<strong>${ri.emoji} ${esc(buyingItem.name)}</strong><br>${esc(buyingItem.desc)}<br><br>出品者：${esc(buyingItem.owner)}`;
-  document.getElementById('buy-price-display').textContent = `¥${buyingItem.price.toLocaleString()}`;
-  document.getElementById('buy-modal').classList.add('show');
-}
 
-function closeBuyModal() {
-  document.getElementById('buy-modal').classList.remove('show');
-  buyingItem = null;
-}
-
-async function confirmBuy() {
-  if (!buyingItem) return;
-  document.querySelector('.buy-confirm').disabled = true;
-
-  try {
-    // まなぼ or まなぼみにのFBドキュメントを更新してsold=true、売上を加算
-    const ownerDoc = buyingItem.owner === 'まなぼ' ? 'shared' : 'mini-shared';
-    const d = await fsGet(`manabo/${ownerDoc}`);
-    if (!d) throw new Error('データ取得失敗');
-
-    let shopItems = d.shopItems ? JSON.parse(d.shopItems) : [];
-    shopItems = shopItems.map(item =>
-      item.shopId === buyingItem.shopId ? { ...item, sold: true } : item
-    );
-
-    const newCoins = (d.coins || 0) + buyingItem.price;
-    await fsPatch(`manabo/${ownerDoc}`, {
-      shopItems: JSON.stringify(shopItems),
-      coins: newCoins,
-    });
-
-    // 画面更新
-    buyingItem.sold = true;
-    closeBuyModal();
-    renderItems();
-    showToast(`✨ ${buyingItem.name} を購入したよ！${buyingItem.owner}の売上：¥${buyingItem.price.toLocaleString()}`);
-  } catch(e) {
-    showToast('⚠ 購入に失敗したよ…もう一度試してね');
-  }
-  document.querySelector('.buy-confirm').disabled = false;
-}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -441,12 +376,16 @@ async function checkNPCAutoSale() {
   await checkNewSales();
 }
 
-// 「前回見たとき以降に売れたアイテム」を通知
+// 「前回見たとき以降に売れたアイテム」を通知→確認後に自動削除
 async function checkNewSales() {
   const lastSeen = Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
   const newlySold = allShopItems.filter(i => i.sold && i.soldAt && i.soldAt > lastSeen);
   localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
-  if (newlySold.length === 0) return;
+  if (newlySold.length === 0) {
+    // 前回確認済みのSOLD商品も削除（今回新たに売れたものがない場合も掃除）
+    await cleanupSoldItems();
+    return;
+  }
 
   // 売れたアイテムを上部バナーで通知
   const banner = document.createElement('div');
@@ -456,7 +395,48 @@ async function checkNewSales() {
     return `${ri.emoji}「${esc(i.name)}」が${i.buyerEmoji||'👤'}${esc(i.buyerName||'だれか')}に売れました！¥${i.price.toLocaleString()}`;
   }).join('　／　');
   document.body.appendChild(banner);
-  setTimeout(() => banner.remove(), 8000);
+
+  // バナー表示後に自動削除
+  setTimeout(async () => {
+    banner.remove();
+    await cleanupSoldItems();
+  }, 8000);
+}
+
+// 売れた商品をshopItems・inventoryから完全削除してFirebaseに反映
+async function cleanupSoldItems() {
+  const soldItems = allShopItems.filter(i => i.sold);
+  if (soldItems.length === 0) return;
+
+  // オーナーごとにまとめて処理
+  const byOwner = {};
+  soldItems.forEach(item => {
+    const doc = item.owner === 'まなぼ' ? 'shared' : 'mini-shared';
+    if (!byOwner[doc]) byOwner[doc] = [];
+    byOwner[doc].push(item.shopId);
+  });
+
+  for (const [doc, shopIds] of Object.entries(byOwner)) {
+    try {
+      const d = await fsGet(`manabo/${doc}`);
+      if (!d) continue;
+      // shopItemsから売れたものを削除
+      let shopItems = JSON.parse(d.shopItems || '[]');
+      shopItems = shopItems.filter(i => !shopIds.includes(i.shopId));
+      // inventoryからも削除（isWorkなど出品元アイテム）
+      let inventory = JSON.parse(d.inventory || '[]');
+      inventory = inventory.filter(i => !shopIds.includes(i.shopId));
+      await fsPatch(`manabo/${doc}`, {
+        shopItems: JSON.stringify(shopItems),
+        inventory: JSON.stringify(inventory),
+      });
+      // 画面からも削除
+      shopIds.forEach(id => {
+        allShopItems = allShopItems.filter(i => i.shopId !== id);
+      });
+    } catch(e) { console.warn('cleanup error', e); }
+  }
+  renderItems();
 }
 
 // 来たけど買わなかった訪問者ログ
