@@ -932,7 +932,11 @@ async function sendChat() {
     : 'まだ何も知らない';
 
   // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
+  const miniNote = miniInChat
+    ? `【最重要】今は「${window._miniName||'まなぼみに'}」が部屋に来ている。返答は必ず「${window._miniName||'まなぼみに'}」に向けて話すこと。ユーザーの発言よりも「${window._miniName||'まなぼみに'}」との会話を優先する。ユーザーへの返答は不要。`
+    : '';
   const sys = `あなたはペット「${S.petName}」。中学生に教えてもらって育つキャラ。${S.persona ? `【性格メモ：${S.persona}】` : ''}
+${miniNote}
 【キャラの核心】かわいい・アホ・鋭い・雑・カオスが混在する読めないキャラ。毎回違うトーンで返す。
 【語尾ルール（必ず使う）】${gobiStr()} を混ぜて使う。敬語禁止。
 【重要：チャットで何か知識・事実・勉強内容を教えてもらったら自動で記憶する】
@@ -954,8 +958,13 @@ async function sendChat() {
     const history = S.chatHistory.slice(-10).slice(0, -1);
     const contents = [...history, { role: 'user', parts: [{ text: txt }] }];
     const raw = await callGemini(sys, contents);
-    const p = parseJSON(raw);
-    const reply = p?.reply || raw.slice(0, 80);
+    let p = parseJSON(raw);
+    // JSON全体のパースに失敗した場合、replyだけ正規表現で抽出
+    if (!p?.reply) {
+      const m = raw.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (m) p = { reply: m[1].replace(/\\n/g,'\n') };
+    }
+    const reply = p?.reply || raw.replace(/\{.*\}/s,'').trim().slice(0,80) || raw.slice(0,80);
 
     // 知識として保存すべき内容があれば自動保存
     if (p?.learn?.topic && p?.learn?.summary) {
@@ -1849,16 +1858,35 @@ const PARTNER_ID = 'mini-shared'; // まなぼから見た相手
 const MY_ID = 'shared';
 
 async function fsWritePartner(docId, data) {
-  const db = getDB();
-  const snap = await db.collection('manabo').doc(docId).get();
-  const existing = snap.exists ? snap.data() : {};
-  await db.collection('manabo').doc(docId).set({ ...existing, ...data });
+  // REST APIでフィールドだけPATCH更新（他フィールドを上書きしない）
+  const fields = {};
+  for (const [k,v] of Object.entries(data)) {
+    if (typeof v === 'string') fields[k] = { stringValue: v };
+    else if (typeof v === 'number') fields[k] = { integerValue: String(v) };
+    else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+  }
+  const fieldMask = Object.keys(data).map(k => `updateMask.fieldPaths=${k}`).join('&');
+  await fetch(
+    `https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${docId}?${fieldMask}`,
+    { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields}) }
+  );
 }
 
 async function fsReadPartner(docId) {
-  const db = getDB();
-  const snap = await db.collection('manabo').doc(docId).get();
-  return snap.exists ? snap.data() : null;
+  // REST APIで常に最新を取得
+  try {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${docId}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.fields) return null;
+    const obj = {};
+    for (const [k,v] of Object.entries(data.fields)) {
+      if ('stringValue' in v) obj[k] = v.stringValue;
+      else if ('integerValue' in v) obj[k] = Number(v.integerValue);
+      else if ('booleanValue' in v) obj[k] = v.booleanValue;
+    }
+    return obj;
+  } catch(e) { return null; }
 }
 
 // ── お手紙機能 ──
