@@ -551,6 +551,15 @@
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="app.js?v=37"></script>
+<!-- app.js を機能ごとに分割（挙動は変更なし・読み込み順に依存関係なし） -->
+<script src="js/data.js?v=1"></script>
+<script src="js/state.js?v=1"></script>
+<script src="js/core-ui.js?v=1"></script>
+<script src="js/pet-animation.js?v=1"></script>
+<script src="js/chat.js?v=1"></script>
+<script src="js/diary-knowledge.js?v=1"></script>
+<script src="js/customize.js?v=1"></script>
+<script src="js/social.js?v=1"></script>
+<script src="js/shop-craft.js?v=1"></script>
 </body>
 </html>

@@ -894,7 +894,7 @@ async function callGemini(systemInstruction, contents) {
   });
   const data = await res.json();
   if (data.error) {
-    alert('Claudeエラー：' + data.error.message + ' / type：' + data.error.type);
+    console.warn('Claude API error:', data.error.type, data.error.message);
     throw new Error(data.error.message);
   }
   return data.content?.[0]?.text || '';
@@ -1117,8 +1117,6 @@ JSON形式のみ（コードブロック不要）:
     showThinking(false);
     console.error('teachManabo error:', e);
     typeText('うまくきこえなかった…もう一回おしえて？');
-    // エラー内容をトーストで表示（デバッグ用）
-    showToast('エラー: ' + (e?.message || String(e)).slice(0, 50));
   }
   document.getElementById('teach-btn').disabled = false;
 }
