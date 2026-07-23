@@ -1904,21 +1904,30 @@ async function inviteManabo() {
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
 今「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）の部屋に遊びに来た。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。`;
 
-  // まなぼのappearanceをサーバーから直接取得（キャッシュバイパス）
+  // まなぼのappearanceをFirestore REST APIで直接取得
   let manaboAppearance = null;
   try {
-    const db = getDB();
-    const snap = await db.collection('manabo').doc(PARTNER_ID).get({ source: 'server' });
-    if (snap.exists) {
-      const latest = snap.data();
-      if (latest.appearance) manaboAppearance = JSON.parse(latest.appearance);
-      if (latest.petName) manaboName = latest.petName;
+    const FB_URL = `https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${PARTNER_ID}`;
+    const res = await fetch(FB_URL);
+    if (res.ok) {
+      const data = await res.json();
+      const fields = data.fields || {};
+      if (fields.appearance?.stringValue) {
+        manaboAppearance = JSON.parse(fields.appearance.stringValue);
+      }
+      if (fields.petName?.stringValue) manaboName = fields.petName.stringValue;
     }
   } catch(e) {
     try {
-      const latest = await fsReadPartner(PARTNER_ID);
-      if (latest?.appearance) manaboAppearance = JSON.parse(latest.appearance);
-      if (latest?.petName) manaboName = latest.petName;
+      const db = getDB();
+      const snap = await db.collection('manabo').doc(PARTNER_ID).get({ source: 'server' });
+      if (snap.exists) {
+        const latest = snap.data();
+        if (latest.appearance) {
+          try { manaboAppearance = JSON.parse(latest.appearance); } catch(_) {}
+        }
+        if (latest.petName) manaboName = latest.petName;
+      }
     } catch(e2) {}
   }
   const manaboSVG = buildMiniSVG(manaboAppearance, 28);
