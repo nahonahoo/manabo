@@ -891,7 +891,7 @@ async function callGemini(systemInstruction, contents) {
   });
   const data = await res.json();
   if (data.error) {
-    alert('Claudeエラー：' + data.error.message + ' / type：' + data.error.type);
+    console.warn('Claude API error:', data.error.type, data.error.message);
     throw new Error(data.error.message);
   }
   return data.content?.[0]?.text || '';
