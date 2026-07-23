@@ -1,1 +1,0 @@
-manabo-shop.html名前をindex.htmlに変えてからGitHubにアップロード！
