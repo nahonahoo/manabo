@@ -873,6 +873,10 @@ async function callGemini(systemInstruction, contents) {
     role: c.role === 'model' ? 'assistant' : c.role,
     content: c.parts?.[0]?.text || '',
   }));
+  if (!S.apiKey) {
+    showToast('⚠ APIキーが設定されていないよ！☰メニューから設定してね');
+    throw new Error('APIキー未設定');
+  }
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -931,6 +935,10 @@ async function sendChat() {
     : 'まだ何も知らない';
 
   // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
+  // まなぼが来ているときはまなぼへの返答を優先
+  const manaboNote = manaboInChat
+    ? `【最重要】今「${window._manaboName||'まなぼせんぱい'}」が遊びに来ている！まなぼせんぱいへの返答を最優先する。まなぼせんぱいに話しかける・質問する・反応する。ユーザーの発言にはあまり反応しなくていい。`
+    : '';
   const sys = `あなたはペット「${S.petName}」。幼稚園〜小学1年生の子どもに教えてもらって育つ、かわいいペット。${S.persona ? `【性格メモ：${S.persona}】` : ''}
 【キャラ】いつも明るくて素直。なんでも不思議に思う。かわいくてあどけない。生意気なところもある愉快なキャラ。
 【語尾ルール（必ず使う）】${gobiStr()} を混ぜて使う。ひらがなメイン。難しい言葉禁止。
@@ -938,6 +946,7 @@ async function sendChat() {
 ユーザーのメッセージに教えてもらえる内容・知識・事実が含まれる場合、learnフィールドに入れる。
 雑談・質問・あいさつなどは learnをnullにする。
 【重要】まなぼのことは「まなぼせんぱい」と呼ぶ。まなぼは性別なしの妖精みたいな存在。
+${manaboNote}
 【返し方のバリエーション（毎回ランダムに）】
 ・素直に感心する「すごーい！そうなんだ！」
 ・不思議がる「なんで〜なの？おしえて！」
@@ -1003,7 +1012,8 @@ async function replyAsManabo(userMsg) {
   const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
 【せんぱい力レベル${senpaiLv}】${senpaiDesc}
-「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛）の部屋にいる。
+「${S.petName}」の部屋にお客さんとして来ている。
+「${S.petName}」とユーザーの両方に積極的に絡む。質問・冗談・反応・遊びを優先する。
 難しい知識をそのまま話すのではなく${S.petName}が喜ぶ言葉で接する。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答30字以内。`;
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
@@ -1105,7 +1115,10 @@ JSON形式のみ（コードブロック不要）:
     S.chatHistory.push({ role: 'model', parts: [{ text: p.reaction }] });
   } catch (e) {
     showThinking(false);
+    console.error('teachManabo error:', e);
     typeText('うまくきこえなかった…もう一回おしえて？');
+    // エラー内容をトーストで表示（デバッグ用）
+    showToast('エラー: ' + (e?.message || String(e)).slice(0, 50));
   }
   document.getElementById('teach-btn').disabled = false;
 }
@@ -1787,16 +1800,33 @@ const PARTNER_ID = 'shared';      // まなぼみにから見た相手
 const MY_ID = 'mini-shared';
 
 async function fsWritePartner(docId, data) {
-  const db = getDB();
-  const snap = await db.collection('manabo').doc(docId).get();
-  const existing = snap.exists ? snap.data() : {};
-  await db.collection('manabo').doc(docId).set({ ...existing, ...data });
+  const fields = {};
+  for (const [k,v] of Object.entries(data)) {
+    if (typeof v === 'string') fields[k] = { stringValue: v };
+    else if (typeof v === 'number') fields[k] = { integerValue: String(v) };
+    else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+  }
+  const fieldMask = Object.keys(data).map(k => `updateMask.fieldPaths=${k}`).join('&');
+  await fetch(
+    `https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${docId}?${fieldMask}`,
+    { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields}) }
+  );
 }
 
 async function fsReadPartner(docId) {
-  const db = getDB();
-  const snap = await db.collection('manabo').doc(docId).get();
-  return snap.exists ? snap.data() : null;
+  try {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${docId}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.fields) return null;
+    const obj = {};
+    for (const [k,v] of Object.entries(data.fields)) {
+      if ('stringValue' in v) obj[k] = v.stringValue;
+      else if ('integerValue' in v) obj[k] = Number(v.integerValue);
+      else if ('booleanValue' in v) obj[k] = v.booleanValue;
+    }
+    return obj;
+  } catch(e) { return null; }
 }
 
 // ── お手紙 ──
@@ -1941,8 +1971,10 @@ async function inviteManabo() {
   const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
 【せんぱい力レベル${senpaiLv}】${senpaiDesc}
-今「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）の部屋に遊びに来た。
-中学生レベルの知識をそのまま話すのではなく、${S.petName}が喜ぶ・わかりやすい言葉で接する。
+今「${S.petName}」の部屋にお客さんとして遊びに来ている。
+「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）とユーザーの両方に積極的に話しかける。
+質問したり、冗談を言ったり、「${S.petName}」の言ったことに反応したり、一緒に楽しく遊ぶ。
+中学生レベルの知識をそのまま話すのではなく、「${S.petName}」が喜ぶ・わかりやすい言葉で接する。
 語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。ひらがなメイン。`;
 
   // まなぼのappearanceをFirestore REST APIで直接取得
