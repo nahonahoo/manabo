@@ -2057,7 +2057,19 @@ async function forceRefresh() {
       S.kouryuLv = d.kouryuLv || S.kouryuLv;
       S.petName  = d.petName  || S.petName;
       S.persona  = d.persona  || S.persona;
-      if (d.appearance) try { Object.assign(S.appearance, JSON.parse(d.appearance)); } catch(_) {}
+      if (d.appearance) {
+        try {
+          const ap = JSON.parse(d.appearance);
+          // まなぼ（紫）の色が入っていたらまなぼみに（オレンジ）にリセット
+          const isManaboColor = ap.bodyLight === '#ede0ff' || ap.bodyDark === '#c5aaf0';
+          if (!isManaboColor) {
+            Object.assign(S.appearance, ap);
+          } else {
+            // オレンジにリセットしてFirebaseに保存
+            S.appearance = { bodyLight:'#fff0e0', bodyDark:'#ffb870', eyeColor:'#6a3a2a', blushColor:'#ffb8a0', earShape:'round', accessory:'star', tailShape:'normal' };
+          }
+        } catch(_) {}
+      }
     }
     updateHeader();
     renderKnowledge();
