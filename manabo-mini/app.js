@@ -650,8 +650,9 @@ function updateHeader() {
   const craftEl = document.getElementById('craft-remain');
   if (craftEl) {
     const lastCraftTs = S.craftDate ? Number(S.craftDate) : 0;
+    const isOld = !S.craftDate || isNaN(lastCraftTs) || lastCraftTs < 1000000000000;
     const elapsed = Date.now() - lastCraftTs;
-    const remain = elapsed >= 24*60*60*1000 ? 2 : Math.max(0, 2 - S.craftCount);
+    const remain = (isOld || elapsed >= 24*60*60*1000) ? 2 : Math.max(0, 2 - S.craftCount);
     craftEl.textContent = remain;
   }
 }
@@ -2070,7 +2071,9 @@ async function craftNewItem() {
   // 最後の発明から24時間経過していたらリセット
   const now = Date.now();
   const lastCraft = S.craftDate ? Number(S.craftDate) : 0;
-  if (now - lastCraft >= 24 * 60 * 60 * 1000) { S.craftCount = 0; }
+  // 古い日付文字列（NaN or 0）の場合もリセット扱いに
+  const isOldFormat = !S.craftDate || isNaN(lastCraft) || lastCraft < 1000000000000;
+  if (isOldFormat || now - lastCraft >= 24 * 60 * 60 * 1000) { S.craftCount = 0; S.craftDate = ''; }
   if (S.craftCount >= 2) { showToast('きょうはもう2かいはつめいしたよ！あしたまたね！'); return; }
   const btn = document.getElementById('craft-btn');
   if (btn) btn.disabled = true;
