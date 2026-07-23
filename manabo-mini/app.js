@@ -645,6 +645,13 @@ function updateHeader() {
   document.getElementById('xp-num').textContent = S.xp;
   document.getElementById('xp-max').textContent = S.xpMax;
   document.getElementById('xp-fill').style.width = Math.round(S.xp / S.xpMax * 100) + '%';
+  // 星ビジュアル（XP数に応じて☆が★になる）
+  const starsEl = document.getElementById('xp-stars');
+  if (starsEl) {
+    const filled = '⭐'.repeat(S.xp);
+    const empty = '✩'.repeat(Math.max(0, S.xpMax - S.xp));
+    starsEl.textContent = filled + empty;
+  }
   const coinsEl = document.getElementById('coins-display');
   if (coinsEl) coinsEl.textContent = S.coins.toLocaleString();
   const craftEl = document.getElementById('craft-remain');
@@ -1082,6 +1089,7 @@ JSON形式のみ（コードブロック不要）:
 
     showHappy(true);
     bounce();
+    showFireworks(); // 花火！
     showThinking(false);
     typeText(p.reaction + '…「' + p.question + '」');
 
@@ -1163,11 +1171,14 @@ async function generateDiary(type) {
     const lines = { 日記: 'かいた！みて！（どや顔）', 小説: 'しょうせつかいた…すごい？', 発表: 'はっぴょうするよ！（ドキドキ）', 詩: 'うた…つくったよ…' };
     typeText(lines[type] || 'かいたよ！えへへ！');
 
-    S._lastWork = { content, type };
+
+    const typeLabel = {'日記':'にっき','小説':'おはなし','詩':'うた','発表':'はっぴょう'}[type] || type;
     if (['日記','小説','詩','にっき','おはなし','うた'].includes(type)) {
       const btn = document.getElementById('diary-sell-btn');
-      if (btn) { btn.textContent = `📖 この${type}をショップにだす`; btn.style.display = ''; }
+      if (btn) { btn.textContent = `📖 この${typeLabel}をショップにだす`; btn.style.display = ''; }
     }
+    // _lastWorkのtypeもひらがなに統一
+    S._lastWork = { content, type: typeLabel };
   } catch (e) {
     document.getElementById('diary-out').textContent = 'かけなかった……ごめんね（ぽかん）';
   }
@@ -2224,4 +2235,56 @@ JSONのみ（コードブロック不要）:
     btn.textContent = `📖 この${work.type}をショップにだす`;
     showToast('ひょうかできなかったよ…もう一かいおしてね！');
   }
+}
+// ── 教えたとき花火アニメ（まなぼみに専用） ──
+function showFireworks() {
+  const colors = ['#ffb870','#ff9ec8','#b388ff','#80deea','#ffe066','#f48fb1'];
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden';
+  document.body.appendChild(container);
+
+  for (let i = 0; i < 18; i++) {
+    const star = document.createElement('div');
+    const x = 20 + Math.random() * 60; // 画面中央付近
+    const y = 20 + Math.random() * 60;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = 12 + Math.random() * 16;
+    const tx = (Math.random() - 0.5) * 200;
+    const ty = (Math.random() - 0.5) * 200;
+    star.style.cssText = `
+      position:absolute;left:${x}%;top:${y}%;
+      width:${size}px;height:${size}px;
+      background:${color};border-radius:50%;
+      transform:scale(0);opacity:1;
+      animation:fw ${0.5 + Math.random() * 0.5}s ease-out ${Math.random() * 0.3}s forwards;
+      --tx:${tx}px;--ty:${ty}px;
+    `;
+    container.appendChild(star);
+  }
+
+  // テキスト
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:absolute;top:35%;left:0;right:0;text-align:center;font-size:2rem;animation:fwMsg .8s ease-out 0.2s both;pointer-events:none';
+  msg.textContent = ['✨すごい！','🌟やったー！','💫えらい！','⭐かしこい！'][Math.floor(Math.random()*4)];
+  container.appendChild(msg);
+
+  setTimeout(() => container.remove(), 1500);
+}
+
+// 花火CSS（動的に追加）
+if (!document.getElementById('fw-style')) {
+  const s = document.createElement('style');
+  s.id = 'fw-style';
+  s.textContent = `
+    @keyframes fw {
+      0%{transform:scale(0) translate(0,0);opacity:1}
+      100%{transform:scale(1) translate(var(--tx),var(--ty));opacity:0}
+    }
+    @keyframes fwMsg {
+      0%{transform:scale(0.5);opacity:0}
+      50%{transform:scale(1.3);opacity:1}
+      100%{transform:scale(1);opacity:0}
+    }
+  `;
+  document.head.appendChild(s);
 }

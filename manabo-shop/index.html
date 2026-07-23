@@ -88,6 +88,7 @@ html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',
 <div id="bg"></div>
 <div id="app">
   <div id="header">
+    <div id="home-btn-wrap" style="margin-bottom:8px;width:100%;text-align:center"></div>
     <div class="shop-title">✨ まなぼ王国商店 ✨</div>
     <div class="shop-sub">まなぼとまなぼみにが作った不思議なアイテムたち</div>
   </div>
@@ -557,6 +558,19 @@ function showNPCBuyToast(npc, item, msg) {
 const style = document.createElement('style');
 style.textContent = '@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
 document.head.appendChild(style);
+
+// URLパラメータからどちらのホームから来たか判定
+(function() {
+  const params = new URLSearchParams(location.search);
+  const from = params.get('from');
+  const wrap = document.getElementById('home-btn-wrap');
+  if (wrap && from) {
+    const isMini = from === 'mini';
+    const label = isMini ? '🟠 まなぼみにに戻る' : '🟣 まなぼに戻る';
+    const href = isMini ? '../manabo-mini/' : '../';
+    wrap.innerHTML = `<a href="${href}" style="display:inline-block;padding:6px 18px;background:rgba(255,245,220,0.15);border:1px solid rgba(240,176,0,0.5);border-radius:99px;color:var(--gold-light);font-size:.8rem;text-decoration:none;font-family:inherit">${label}</a>`;
+  }
+})();
 
 loadShop().then(() => setTimeout(checkNPCAutoSale, 2000));
 </script>

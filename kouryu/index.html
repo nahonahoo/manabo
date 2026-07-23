@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>まなぼ × まなぼみに 交流きろく</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pu:#7c5cbf;--pu-light:#ede0ff;--or:#ffb870;--or-light:#fff0e0;
+  --gold:#f0b000;--text:#2d2040;--text2:#7a6a9a;--white:#fffdf5;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{min-height:100%;font-family:-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;
+  background:linear-gradient(135deg,#1a0830 0%,#0a1a30 100%);color:var(--text)}
+
+#app{max-width:480px;margin:0 auto;padding:16px 14px calc(24px + var(--safe-bottom));min-height:100vh}
+
+.page-title{text-align:center;padding:20px 0 16px;font-size:1.2rem;font-weight:800;
+  color:var(--gold);text-shadow:0 0 16px rgba(240,176,0,0.5)}
+.page-sub{text-align:center;font-size:.78rem;color:rgba(255,245,220,0.6);margin-bottom:20px}
+
+/* タブ */
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tab{flex:1;padding:9px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06);color:rgba(255,245,220,0.7);
+  font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer;text-align:center;
+  -webkit-tap-highlight-color:transparent}
+.tab.active{background:rgba(240,176,0,0.2);border-color:var(--gold);color:var(--gold)}
+
+/* カード */
+.card{background:rgba(255,253,245,0.92);border-radius:16px;padding:13px 14px;
+  margin-bottom:10px;box-shadow:0 3px 16px rgba(0,0,0,0.3)}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.card-icon{font-size:1.4rem;flex-shrink:0}
+.card-meta{font-size:.72rem;color:var(--text2)}
+.card-name{font-size:.85rem;font-weight:700;color:var(--text)}
+.card-body{font-size:.82rem;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-all}
+.card-tag{display:inline-block;font-size:.65rem;padding:2px 8px;border-radius:99px;
+  font-weight:600;margin-left:6px;vertical-align:middle}
+.tag-manabo{background:var(--pu-light);color:var(--pu)}
+.tag-mini{background:var(--or-light);color:#c06010}
+
+.empty{text-align:center;padding:3rem 1rem;color:rgba(255,245,220,0.4);font-size:.88rem;line-height:2}
+#loading{text-align:center;padding:3rem;color:rgba(255,245,220,0.5);font-size:.88rem}
+
+/* セクションラベル */
+.section-label{font-size:.72rem;font-weight:600;color:rgba(240,176,0,0.7);
+  text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="page-title">✨ まなぼ × まなぼみに 交流きろく</div>
+  <div class="page-sub">ふたりの思い出が全部ここに</div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('omiyage',this)">🎁 おみやげ知識</button>
+    <button class="tab" onclick="showTab('letters',this)">✉ お手紙</button>
+    <button class="tab" onclick="showTab('works',this)">📖 合同作品</button>
+  </div>
+  <div id="loading">読み込み中…✨</div>
+  <div id="content" style="display:none"></div>
+</div>
+
+<script>
+const FB_URL = 'https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents';
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function fsGet(path) {
+  const res = await fetch(`${FB_URL}/${path}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.fields) return null;
+  const obj = {};
+  for (const [k,v] of Object.entries(data.fields)) {
+    if ('stringValue' in v) obj[k] = v.stringValue;
+    else if ('integerValue' in v) obj[k] = Number(v.integerValue);
+    else if ('booleanValue' in v) obj[k] = v.booleanValue;
+  }
+  return obj;
+}
+
+let allData = { manabo: null, mini: null };
+let currentTab = 'omiyage';
+
+async function loadAll() {
+  const [d1, d2] = await Promise.all([
+    fsGet('manabo/shared'),
+    fsGet('manabo/mini-shared'),
+  ]);
+  allData.manabo = d1;
+  allData.mini = d2;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = '';
+  renderTab();
+}
+
+function showTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('content');
+  if (currentTab === 'omiyage') renderOmiyage(el);
+  else if (currentTab === 'letters') renderLetters(el);
+  else renderWorks(el);
+}
+
+function fmtDate(ts) {
+  if (!ts) return '';
+  return new Date(Number(ts)).toLocaleDateString('ja-JP',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+// おみやげ知識
+function renderOmiyage(el) {
+  const m = allData.manabo;
+  const n = allData.mini;
+  const mItems = m?.omiyage ? tryParse(m.omiyage) : [];
+  const nItems = n?.omiyage ? tryParse(n.omiyage) : [];
+
+  if (mItems.length === 0 && nItems.length === 0) {
+    el.innerHTML = '<div class="empty">まだおみやげ知識はないよ！<br>まなぼとまなぼみにで交流してみよう✨</div>';
+    return;
+  }
+
+  const all = [
+    ...mItems.map(o => ({...o, owner:'まなぼ'})),
+    ...nItems.map(o => ({...o, owner:'まなぼみに'})),
+  ].sort((a,b) => (b.at||0) - (a.at||0));
+
+  el.innerHTML = `<div class="section-label">🎁 おみやげ知識 全${all.length}件</div>` +
+    all.map(o => `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🎁</div>
+          <div>
+            <div class="card-name">${esc(o.topic)}<span class="card-tag ${o.owner==='まなぼ'?'tag-manabo':'tag-mini'}">${esc(o.owner)}</span></div>
+            <div class="card-meta">${esc(o.from||'')} より・${fmtDate(o.at)}</div>
+          </div>
+        </div>
+        <div class="card-body">${esc(o.insight)}</div>
+      </div>`).join('');
+}
+
+// お手紙
+function renderLetters(el) {
+  const m = allData.manabo;
+  const n = allData.mini;
+  const mLetters = m?.letters ? tryParse(m.letters) : [];
+  const nLetters = n?.letters ? tryParse(n.letters) : [];
+
+  if (mLetters.length === 0 && nLetters.length === 0) {
+    el.innerHTML = '<div class="empty">まだお手紙はないよ！<br>チャット画面から✉お手紙を送ってみよう</div>';
+    return;
+  }
+
+  const all = [
+    ...mLetters.map(l => ({...l, to:'まなぼ'})),
+    ...nLetters.map(l => ({...l, to:'まなぼみに'})),
+  ].sort((a,b) => (b.at||0) - (a.at||0));
+
+  el.innerHTML = `<div class="section-label">✉ お手紙 全${all.length}件</div>` +
+    all.map(l => `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">✉</div>
+          <div>
+            <div class="card-name">${esc(l.from)} → ${esc(l.to)}</div>
+            <div class="card-meta">${fmtDate(l.at)}</div>
+          </div>
+        </div>
+        <div class="card-body">${esc(l.text)}</div>
+      </div>`).join('');
+}
+
+// 合同作品（shopItemsのisWork=trueのものを表示）
+function renderWorks(el) {
+  const m = allData.manabo;
+  const n = allData.mini;
+  const mShop = m?.shopItems ? tryParse(m.shopItems) : [];
+  const nShop = n?.shopItems ? tryParse(n.shopItems) : [];
+  const mInv  = m?.inventory  ? tryParse(m.inventory)  : [];
+  const nInv  = n?.inventory  ? tryParse(n.inventory)  : [];
+
+  const works = [
+    ...[...mShop,...mInv].filter(i=>i.isWork||i.cat==='本').map(i=>({...i,owner:'まなぼ'})),
+    ...[...nShop,...nInv].filter(i=>i.isWork||i.cat==='本').map(i=>({...i,owner:'まなぼみに'})),
+  ].sort((a,b)=>(b.craftedAt||0)-(a.craftedAt||0)).slice(0,20);
+
+  if (works.length === 0) {
+    el.innerHTML = '<div class="empty">まだ作品はないよ！<br>日記・小説・詩を書いて出品してみよう📖</div>';
+    return;
+  }
+
+  el.innerHTML = `<div class="section-label">📖 作品 全${works.length}件</div>` +
+    works.map(w => {
+      const sold = w.sold ? ' ✅SOLD' : '';
+      return `<div class="card">
+        <div class="card-header">
+          <div class="card-icon">📖</div>
+          <div>
+            <div class="card-name">${esc(w.name)}<span class="card-tag ${w.owner==='まなぼ'?'tag-manabo':'tag-mini'}">${esc(w.owner)}</span></div>
+            <div class="card-meta">¥${(w.price||0).toLocaleString()}${sold}・${fmtDate(w.craftedAt)}</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-size:.75rem;color:#7a6a9a">${esc(w.desc||'')}</div>
+      </div>`;
+    }).join('');
+}
+
+function tryParse(str) {
+  try { return JSON.parse(str) || []; } catch { return []; }
+}
+
+loadAll();
+</script>
+</body>
+</html>
