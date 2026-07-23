@@ -260,7 +260,7 @@ function showToast(msg) {
 }
 
 // ── 時間ベースNPC自動購入システム ──
-const CHECK_INTERVAL_HOURS = 4; // 4時間ごとに購入チェック
+const CHECK_INTERVAL_HOURS = 1; // 1時間ごとに購入チェック
 const LAST_CHECK_KEY = 'shop_last_npc_check';
 const LAST_SEEN_KEY  = 'shop_last_seen_items';
 
@@ -268,19 +268,19 @@ const LAST_SEEN_KEY  = 'shop_last_seen_items';
 function currentHour() { return new Date().getHours(); }
 function currentDay()  { return new Date().getDay(); } // 0=日, 6=土
 
-// 時間帯でアクティブなNPCをフィルタ
+// 時間帯でアクティブなNPCをフィルタ（緩め設定）
 function getActiveNPCs() {
   const h = currentHour();
   const d = currentDay();
   return NPCS.filter(npc => {
-    // 時間帯フィルター
-    if (npc.activeHours) {
+    // 時間帯フィルター（50%の確率で無視してランダム来店も許可）
+    if (npc.activeHours && Math.random() > 0.5) {
       const [from, to] = npc.activeHours;
       if (from < to) { if (h < from || h >= to) return false; }
-      else            { if (h < from && h >= to) return false; } // 深夜をまたぐ
+      else            { if (h < from && h >= to) return false; }
     }
-    // 曜日フィルター
-    if (npc.activeDays && !npc.activeDays.includes(d)) return false;
+    // 曜日フィルター（70%の確率で無視）
+    if (npc.activeDays && Math.random() > 0.7 && !npc.activeDays.includes(d)) return false;
     return true;
   });
 }
@@ -314,7 +314,7 @@ async function checkNPCAutoSale() {
 
   // アクティブNPCのうち何人かがフラッと来店する（買うかどうかは別）
   const visitors = activeNPCs
-    .filter(() => Math.random() < 0.35) // 35%の確率で来店
+    .filter(() => Math.random() < 0.55) // 55%の確率で来店
     .slice(0, 4); // 最大4人
 
   for (const npc of visitors) {
@@ -329,7 +329,7 @@ async function checkNPCAutoSale() {
     if (wantedItems.length > 0) {
       // 欲しいものがある → 購入確率チェック
       const item = wantedItems[Math.floor(Math.random() * wantedItems.length)];
-      const checkProbs = [0.35, 0.25, 0.18, 0.10, 0.04];
+      const checkProbs = [0.60, 0.45, 0.32, 0.18, 0.08];
       const prob = checkProbs[item.rarity] ?? 0.20;
       if (Math.random() < prob) {
         purchases.push({ item, npc });
@@ -347,7 +347,7 @@ async function checkNPCAutoSale() {
   setTimeout(() => showMissVisits(missVisits), purchases.length > 0 ? 8000 : 1000);
 
   // 最大2件処理
-  for (const { item, npc } of purchases.slice(0, 2)) {
+  for (const { item, npc } of purchases.slice(0, 3)) {
     const ownerDoc = item.owner === 'まなぼ' ? 'shared' : 'mini-shared';
     try {
       const d = await fsGet(`manabo/${ownerDoc}`);
