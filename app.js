@@ -992,16 +992,42 @@ async function sendChat() {
   // まなぼみにが招待されていたら、まなぼみにも返事する
   if (miniInChat && txt) {
     setTimeout(() => replyAsMini(txt), 900);
+    // ユーザーの発言からまなぼみにがその場で学ぶ
+    setTimeout(() => miniLearnFromUser(txt), 2000);
   }
 }
 
 async function replyAsMini(userMsg) {
   const miniName = window._miniName || 'まなぼみに';
   const miniPersona = window._miniPersona || '';
+  const miniKnow = window._miniKnowledge || [];
+  const miniKnowCount = miniKnow.length;
+  // 教科バランスよく最大6件選ぶ
+  let replyPicks = [];
+  if (miniKnowCount > 0) {
+    const byS = {};
+    miniKnow.forEach(k => { const s = k.subject||'にちじょう'; if(!byS[s])byS[s]=[]; byS[s].push(k); });
+    const subs = Object.keys(byS);
+    let i = 0;
+    while (replyPicks.length < 6 && replyPicks.length < miniKnowCount) {
+      const s = subs[i % subs.length];
+      const pool = byS[s];
+      if (pool.length > 0) replyPicks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+      i++;
+    }
+  }
+  const replyLv = miniKnowCount>=31?4:miniKnowCount>=16?3:miniKnowCount>=6?2:1;
+  const replyLvDesc = ['','ひらがなメイン・シンプルな反応。','難しい言葉も少し混じる・知識を披露したがる。','鋭い質問が増える・覚えた言葉を得意げに使う。','語彙が豊か・知識をひけらかしたがる。'][replyLv];
+  const knowStr = replyPicks.length > 0
+    ? '【' + miniName + 'の知識（全' + miniKnowCount + '件）】' + replyPicks.map(k => ' /' + k.topic + ':' + k.summary).join('')
+    : '';
   const sys = `あなたはペット「${miniName}」。幼稚園〜小学生くらいの生意気で鋭くて好奇心旺盛なキャラ。
 知識をどんどん増やしたくて鋭い質問をしてしまう。アホで破天荒な面もある愉快なキャラ。
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
-まなぼ（ユーモアたっぷりのツッコミ役せんぱい・性別なし・妖精みたいなキャラ）の部屋にいる。語尾は「〜だよ！」「えへへ」「わあ！」など。返答30字以内。ひらがなメイン。`;
+【成長レベル（知識${miniKnowCount}件）】${replyLvDesc}
+${knowStr}
+まなぼせんぱい（性別なし・妖精みたいなキャラ）の部屋にいる。
+覚えた知識を自然に話題にしたり得意げに披露したりする。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
     const svg = window._miniSVG || buildMiniSVG(null, 28);
@@ -1946,22 +1972,70 @@ async function inviteMini() {
   document.getElementById('invite-mini-btn').style.display = 'none';
   document.getElementById('bye-mini-btn').style.display = '';
 
-  // まなぼみにのpetName・personaをFirebaseから取得
+  // まなぼみにのpetName・persona・knowledgeをFirebaseから取得
   let miniName = 'まなぼみに';
   let miniPersona = '';
+  let miniKnowledge = [];
   try {
-    const d = await fsReadPartner(PARTNER_ID);
-    if (d) {
-      miniName = d.petName || 'まなぼみに';
-      miniPersona = d.persona || '';
+    const FB_URL_D = `https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${PARTNER_ID}`;
+    const res = await fetch(FB_URL_D);
+    if (res.ok) {
+      const data = await res.json();
+      const fields = data.fields || {};
+      if (fields.petName?.stringValue) miniName = fields.petName.stringValue;
+      if (fields.persona?.stringValue) miniPersona = fields.persona.stringValue;
+      if (fields.knowledge?.stringValue) {
+        try {
+          miniKnowledge = JSON.parse(fields.knowledge.stringValue);
+        } catch(_) {}
+      }
     }
-  } catch(e) {}
+  } catch(e) {
+    try {
+      const d = await fsReadPartner(PARTNER_ID);
+      if (d) {
+        miniName = d.petName || 'まなぼみに';
+        miniPersona = d.persona || '';
+        if (d.knowledge) try { miniKnowledge = JSON.parse(d.knowledge); } catch(_) {}
+      }
+    } catch(e2) {}
+  }
+
+  // 教科バランスよく最大8件選ぶ
+  const miniKnowTotal = miniKnowledge.length;
+  let miniKnowPicks = [];
+  if (miniKnowTotal > 0) {
+    const bySubject = {};
+    miniKnowledge.forEach(k => {
+      const s = k.subject || 'にちじょう';
+      if (!bySubject[s]) bySubject[s] = [];
+      bySubject[s].push(k);
+    });
+    const subjects = Object.keys(bySubject);
+    let si = 0;
+    while (miniKnowPicks.length < 8 && miniKnowPicks.length < miniKnowTotal) {
+      const s = subjects[si % subjects.length];
+      const pool = bySubject[s];
+      if (pool.length > 0) miniKnowPicks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+      si++;
+    }
+  }
+  // 知識量に応じた成長レベル
+  const miniLv = miniKnowTotal>=31?4:miniKnowTotal>=16?3:miniKnowTotal>=6?2:1;
+  const miniLvDesc = ['','ひらがなメイン・シンプルな反応。','難しい言葉も少し混じる・知識を披露したがる。','鋭い質問が増える・覚えた言葉を得意げに使う。','語彙が豊か・知識をひけらかしたがる。'][miniLv];
+  const miniKnowStr = miniKnowPicks.length > 0
+    ? '【' + miniName + 'の知識（全' + miniKnowTotal + '件）】' + miniKnowPicks.map(k => ' /' + k.topic + ':' + k.summary).join('')
+    : '';
 
   // まなぼみにのキャラでチャットに登場
   const sys = `あなたはペット「${miniName}」。幼稚園〜小学1年生くらいの生意気で鋭くて好奇心旺盛なキャラ。
 知識をどんどん増やしたくて鋭い質問をしてしまう。でもアホで破天荒な面白いことも言う愉快なキャラ。
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
-今まなぼ（ユーモアたっぷりのせんぱい・性別なし・妖精みたいなキャラ）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
+【成長レベル（知識${miniKnowTotal}件）】${miniLvDesc}
+${miniKnowStr}
+今まなぼせんぱい（性別なし・妖精みたいなキャラ）の部屋に遊びに来た。
+覚えた知識を自分から話題にしたり得意げに披露したりする。でも間違えたり的外れなこともある。
+語尾は「〜だよ！」「えへへ」「わあ！」「〜だもん」など。返答50字以内。ひらがなメイン。`;
 
   // まなぼみにのappearance・petNameをFirestore REST APIで直接取得
   let miniAppearance = null;
@@ -2005,6 +2079,7 @@ ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
 
   window._miniName = miniName;
   window._miniPersona = miniPersona;
+  window._miniKnowledge = miniKnowledge;
   window._miniSVG = miniSVG;
   S.partnerName = miniName;
 }
@@ -2023,30 +2098,37 @@ async function byeMini() {
 }
 
 async function generateOmiyage(partnerName) {
-  // 直近のチャット履歴から招待セッション分を抽出してAIに要約させる
   const recentChat = S.chatHistory.slice(-10)
     .map(m => `${m.role === 'user' ? 'ユーザー' : partnerName}：${m.parts?.[0]?.text || ''}`)
     .join('\n');
   if (!recentChat.trim()) return;
 
-  const sys = `会話ログから「ふたつのペットが一緒に話して生まれた気づき・発見・面白い視点」を1〜3個抽出してください。
+  // まなぼ側のおみやげ知識
+  const sysManaboOmiyage = `会話ログから「ふたつのペットが一緒に話して生まれた気づき・発見・面白い視点」を1〜3個抽出してください。
 受験勉強の知識ではなく、会話から生まれた新しい見方・つながり・ひらめきを抽出します。
 JSON形式のみ（コードブロック不要）:
 [{"topic":"（発見・気づきの短いタイトル）","insight":"（どんなひらめきか1文）","from":"${partnerName}"}]
 会話から何も抽出できない場合は空配列 [] を返す。`;
 
+  // まなぼみに側に持ち帰る知識（幼児向け・ひらがなメイン）
+  const sysMiniLearn = `会話ログから「${partnerName}（幼稚園〜小1）が覚えて持ち帰れる新しい発見や気づき」を1〜2個抽出してください。
+難しい知識ではなく、子供が「へえ！」と思える小さな発見。ひらがなメインで短く。
+JSON形式のみ（コードブロック不要）:
+[{"topic":"（発見のタイトル・ひらがなメイン・10字以内）","insight":"（どんな発見か1文・ひらがなメイン・30字以内）","question":"（${partnerName}がまだ悩んでいること・ひらがなで1文。なければ空文字）"}]
+何もなければ空配列 [] を返す。`;
+
   try {
-    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `会話ログ:\n${recentChat}` }] }]);
-    const items = parseJSON(raw);
+    // 並行して両方取得
+    const [raw1, raw2] = await Promise.all([
+      callGemini(sysManaboOmiyage, [{ role:'user', parts:[{ text: `会話ログ:\n${recentChat}` }] }]),
+      callGemini(sysMiniLearn,     [{ role:'user', parts:[{ text: `会話ログ:\n${recentChat}` }] }]),
+    ]);
+
+    // ── まなぼ側おみやげ ──
+    const items = parseJSON(raw1);
     if (Array.isArray(items) && items.length > 0) {
       items.forEach(item => {
-        S.omiyage.push({
-          id: crypto.randomUUID(),
-          topic: item.topic,
-          insight: item.insight,
-          from: item.from || partnerName,
-          at: Date.now(),
-        });
+        S.omiyage.push({ id: crypto.randomUUID(), topic: item.topic, insight: item.insight, from: item.from || partnerName, at: Date.now() });
       });
       const prevLv = S.kouryuLv;
       S.kouryuLv = S.omiyage.length;
@@ -2054,8 +2136,75 @@ JSON形式のみ（コードブロック不要）:
       renderKnowledge();
       showToast(`🎁 おみやげ知識が ${items.length}個 届いたぼ！`);
       typeText(`ぎゃぼー！みにちゃんとはなしてひらめいたぼ！`);
-      // 交流レベル解放通知
       checkKouryuUnlock(prevLv, S.kouryuLv);
+    }
+
+    // ── まなぼみに側に持ち帰る知識をFirebaseに書き込む ──
+    const miniItems = parseJSON(raw2);
+    if (Array.isArray(miniItems) && miniItems.length > 0) {
+      try {
+        const FB_REST = 'https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/mini-shared';
+        const res = await fetch(FB_REST);
+        if (res.ok) {
+          const data = await res.json();
+          const fields = data.fields || {};
+          // 既存knowledgeを読む
+          let miniKnow = [];
+          if (fields.knowledge?.stringValue) {
+            try { miniKnow = JSON.parse(fields.knowledge.stringValue); } catch(_) {}
+          }
+          let miniOmiyage = [];
+          if (fields.omiyage?.stringValue) {
+            try { miniOmiyage = JSON.parse(fields.omiyage.stringValue); } catch(_) {}
+          }
+
+          // 新しい知識を追加
+          const now = Date.now();
+          miniItems.forEach(item => {
+            // knowledgeに追加
+            miniKnow.push({
+              id: crypto.randomUUID(),
+              subject: 'にちじょう',
+              topic: item.topic,
+              summary: item.insight,
+              misunderstanding: item.question || '',
+              createdAt: now,
+              secret: false,
+              fromVisit: true, // まなぼとの交流で覚えた印
+            });
+            // おみやげにも追加
+            miniOmiyage.push({
+              id: crypto.randomUUID(),
+              topic: item.topic,
+              insight: item.insight,
+              from: S.petName,
+              at: now,
+            });
+          });
+
+          // PATCHで更新
+          const patchBody = {
+            fields: {
+              knowledge: { stringValue: JSON.stringify(miniKnow) },
+              omiyage:   { stringValue: JSON.stringify(miniOmiyage) },
+              kouryuLv:  { integerValue: String(miniOmiyage.length) },
+            }
+          };
+          await fetch(FB_REST + '?updateMask.fieldPaths=knowledge&updateMask.fieldPaths=omiyage&updateMask.fieldPaths=kouryuLv', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchBody),
+          });
+
+          // 通知
+          const questionItems = miniItems.filter(i => i.question);
+          if (questionItems.length > 0) {
+            showToast(`💭 ${partnerName}が悩みながら帰っていったぼ…「${questionItems[0].question.slice(0,15)}」`);
+          } else {
+            showToast(`✨ ${partnerName}が新しいことを覚えて帰ったぼ！`);
+          }
+        }
+      } catch(e) { console.warn('mini write error', e); }
     }
   } catch(e) { console.warn('omiyage error', e); }
 }
@@ -2344,4 +2493,77 @@ async function openInventory() {
 }
 function closeInventory() {
   document.getElementById('inventory-modal').style.display = 'none';
+}
+
+// ── ユーザーの発言からまなぼみにがリアルタイムで学ぶ ──
+async function miniLearnFromUser(userMsg) {
+  if (!userMsg || userMsg.length < 5) return; // 短すぎるメッセージは無視
+
+  const sys = `ユーザーの発言から「幼稚園〜小1の子が覚えられる小さな発見・知識」を0〜1個だけ抽出してください。
+明らかに知識・説明・教えが含まれる場合のみ抽出。雑談・質問だけの場合は空配列。
+
+【重要】小学1年生なりの解釈で表現すること。
+- 難しい言葉はひらがなや身近な言葉に言い換える
+- 「〜みたい」「〜なんだって」など子供らしい言い回しにする
+- 少し間違っていたり的外れでもOK（子供らしい解釈でいい）
+- 例：「光合成」→「はっぱが おひさまをたべて おおきくなる」
+
+ひらがなメインで短く表現する。
+JSON形式のみ（コードブロック不要）:
+[{"topic":"（発見タイトル・10字以内・ひらがなメイン）","insight":"（内容1文・30字以内・小1らしい解釈で）"}]
+何もなければ [] を返す。`;
+
+  try {
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
+    const items = parseJSON(raw);
+    if (!Array.isArray(items) || items.length === 0) return;
+
+    // まなぼみにのFirebaseに書き込む
+    const FB_REST = 'https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/mini-shared';
+    const res = await fetch(FB_REST);
+    if (!res.ok) return;
+    const data = await res.json();
+    const fields = data.fields || {};
+
+    let miniKnow = [];
+    if (fields.knowledge?.stringValue) {
+      try { miniKnow = JSON.parse(fields.knowledge.stringValue); } catch(_) {}
+    }
+
+    const now = Date.now();
+    let added = 0;
+    items.forEach(item => {
+      // 重複チェック
+      if (miniKnow.some(k => k.topic === item.topic)) return;
+      miniKnow.push({
+        id: crypto.randomUUID(),
+        subject: 'にちじょう',
+        topic: item.topic,
+        summary: item.insight,
+        misunderstanding: '',
+        createdAt: now,
+        secret: false,
+        fromVisit: true,
+      });
+      added++;
+    });
+
+    if (added === 0) return;
+
+    await fetch(FB_REST + '?updateMask.fieldPaths=knowledge', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { knowledge: { stringValue: JSON.stringify(miniKnow) } } }),
+    });
+
+    // まなぼみにの返答にさりげなく反映（アイコン通知）
+    const item = items[0];
+    const miniName = window._miniName || 'まなぼみに';
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:fixed;top:65px;left:50%;transform:translateX(-50%);background:#fff0e0;border:1px solid #ffb870;border-radius:99px;padding:4px 12px;font-size:11px;color:#c06010;z-index:99;animation:fadeup .3s ease;pointer-events:none;white-space:nowrap';
+    badge.textContent = `🌟 ${miniName}が「${item.topic}」を覚えたよ！`;
+    document.body.appendChild(badge);
+    setTimeout(() => badge.remove(), 3000);
+
+  } catch(e) { /* サイレントに失敗 */ }
 }
