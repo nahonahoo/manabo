@@ -998,9 +998,13 @@ async function sendChat() {
 async function replyAsManabo(userMsg) {
   const manaboName = window._manaboName || 'まなぼ';
   const manaboPersona = window._manaboPersona || '';
-  const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。話をよく聞きながらツッコミを入れる。
+  const senpaiLv = window._manaboSenpaiLv || 1;
+  const senpaiDesc = window._manaboSenpaiDesc || '';
+  const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
-「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛）の部屋にいる。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答30字以内。`;
+【せんぱい力レベル${senpaiLv}】${senpaiDesc}
+「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛）の部屋にいる。
+難しい知識をそのまま話すのではなく${S.petName}が喜ぶ言葉で接する。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答30字以内。`;
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
     const svg = window._manaboSVG || buildMiniSVG(null, 28);
@@ -1888,21 +1892,58 @@ async function inviteManabo() {
   document.getElementById('invite-manabo-btn').style.display = 'none';
   document.getElementById('bye-manabo-btn').style.display = '';
 
-  // まなぼのpetName・personaをFirebaseから取得
+  // まなぼのpetName・persona・level・knowledgeをFirebaseから取得
   let manaboName = 'まなぼ';
   let manaboPersona = '';
+  let manaboKnowledge = [];
+  let manaboLevel = 1;
   try {
-    const d = await fsReadPartner(PARTNER_ID);
-    if (d) {
-      manaboName = d.petName || 'まなぼ';
-      manaboPersona = d.persona || '';
+    const FB_URL_M = `https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${PARTNER_ID}`;
+    const res = await fetch(FB_URL_M);
+    if (res.ok) {
+      const data = await res.json();
+      const fields = data.fields || {};
+      if (fields.petName?.stringValue) manaboName = fields.petName.stringValue;
+      if (fields.persona?.stringValue) manaboPersona = fields.persona.stringValue;
+      if (fields.level?.integerValue) manaboLevel = Number(fields.level.integerValue);
+      if (fields.knowledge?.stringValue) {
+        try { manaboKnowledge = JSON.parse(fields.knowledge.stringValue); } catch(_) {}
+      }
     }
-  } catch(e) {}
+  } catch(e) {
+    try {
+      const d = await fsReadPartner(PARTNER_ID);
+      if (d) {
+        manaboName = d.petName || 'まなぼ';
+        manaboPersona = d.persona || '';
+        manaboLevel = d.level || 1;
+        if (d.knowledge) try { manaboKnowledge = JSON.parse(d.knowledge); } catch(_) {}
+      }
+    } catch(e2) {}
+  }
+
+  // せんぱい力レベル（知識量とLvに応じて）
+  const senpaiScore = manaboLevel + Math.floor(manaboKnowledge.length / 3);
+  const senpaiLv = senpaiScore >= 15 ? 4 : senpaiScore >= 8 ? 3 : senpaiScore >= 4 ? 2 : 1;
+  const senpaiDesc = [
+    '',
+    // Lv1：まだ不慣れ。自分のことしか話せない
+    `まだ${S.petName}への接し方に慣れていない。自分のことしか話せず「えーわかんないぼ」「それむずかしいぼ」と言うことが多い。${S.petName}の話についていけないこともある。`,
+    // Lv2：少し慣れてきた
+    `${S.petName}に合わせようと頑張っている。「それはね…たぶん〜だぼ」と教えようとする。たまに間違えるが一生懸命。`,
+    // Lv3：せんぱいらしくなってきた
+    `${S.petName}の好奇心にうまく応えられる。難しいことをかんたんな言葉に言い換えてあげられる。「そういえば〜だぼ」と話を広げるのが上手。`,
+    // Lv4：頼れるせんぱい
+    `${S.petName}の質問に的確に答えられる。「すごいじゃん！それって〜ってことだぼ！」と褒め上手で話を深めてあげられる。頼れるせんぱい。`,
+  ][senpaiLv];
 
   // まなぼのキャラでチャットに登場
-  const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。話をよく聞きながらツッコミを入れる。
+  const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
-今「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）の部屋に遊びに来た。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。`;
+【せんぱい力レベル${senpaiLv}】${senpaiDesc}
+今「${S.petName}」（幼稚園〜小学生・生意気・好奇心旺盛・アホかわいい）の部屋に遊びに来た。
+中学生レベルの知識をそのまま話すのではなく、${S.petName}が喜ぶ・わかりやすい言葉で接する。
+語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答40字以内。ひらがなメイン。`;
 
   // まなぼのappearanceをFirestore REST APIで直接取得
   let manaboAppearance = null;
@@ -1943,6 +1984,9 @@ ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
   bounce(); showHappy(true);
 
   window._manaboName = manaboName;
+  window._manaboKnowledge = manaboKnowledge;
+  window._manaboSenpaiLv = senpaiLv;
+  window._manaboSenpaiDesc = senpaiDesc;
   window._manaboPersona = manaboPersona;
   window._manaboSVG = manaboSVG;
   S.partnerName = manaboName;
