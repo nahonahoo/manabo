@@ -1963,23 +1963,32 @@ async function inviteMini() {
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
 今まなぼ（ユーモアたっぷりのせんぱい・性別なし・妖精みたいなキャラ）の部屋に遊びに来た。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
 
-  // まなぼみにのappearance・petNameを最新状態で取得
-  // Firebase SDKキャッシュをバイパスしてサーバーから直接読む
+  // まなぼみにのappearance・petNameをFirestore REST APIで直接取得
   let miniAppearance = null;
   try {
-    const db = getDB();
-    const snap = await db.collection('manabo').doc(PARTNER_ID).get({ source: 'server' });
-    if (snap.exists) {
-      const latest = snap.data();
-      if (latest.appearance) miniAppearance = JSON.parse(latest.appearance);
-      if (latest.petName) miniName = latest.petName;
+    const FB_URL = `https://firestore.googleapis.com/v1/projects/manabo-nhnh/databases/(default)/documents/manabo/${PARTNER_ID}`;
+    const res = await fetch(FB_URL);
+    if (res.ok) {
+      const data = await res.json();
+      const fields = data.fields || {};
+      // REST APIのstringValue形式で取得
+      if (fields.appearance?.stringValue) {
+        miniAppearance = JSON.parse(fields.appearance.stringValue);
+      }
+      if (fields.petName?.stringValue) miniName = fields.petName.stringValue;
     }
   } catch(e) {
-    // サーバー取得失敗時はキャッシュから試みる
+    // フォールバック：SDKで試みる
     try {
-      const latest = await fsReadPartner(PARTNER_ID);
-      if (latest?.appearance) miniAppearance = JSON.parse(latest.appearance);
-      if (latest?.petName) miniName = latest.petName;
+      const db = getDB();
+      const snap = await db.collection('manabo').doc(PARTNER_ID).get({ source: 'server' });
+      if (snap.exists) {
+        const latest = snap.data();
+        if (latest.appearance) {
+          try { miniAppearance = JSON.parse(latest.appearance); } catch(_) {}
+        }
+        if (latest.petName) miniName = latest.petName;
+      }
     } catch(e2) {}
   }
   const miniSVG = buildMiniSVG(miniAppearance, 28);
