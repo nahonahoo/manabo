@@ -62,6 +62,7 @@ async function sendChat() {
   petWake();
   addChatMsg('user', txt);
   S.chatHistory.push({ role: 'user', parts: [{ text: txt }] });
+  if (manaboInChat) pushScene('user', 'ユーザー（かいぬしさん）', txt);
   showThinking(true);
   showHappy(false);
   doThinkShake();
@@ -73,7 +74,11 @@ async function sendChat() {
   // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
   // まなぼが来ているときはまなぼへの返答を優先
   const manaboNote = manaboInChat
-    ? `【最重要】今「${window._manaboName||'まなぼせんぱい'}」が遊びに来ている！まなぼせんぱいへの返答を最優先する。まなぼせんぱいに話しかける・質問する・反応する。ユーザーの発言にはあまり反応しなくていい。`
+    ? `【いまの状況】「${window._manaboName||'まなぼせんぱい'}」が部屋に遊びに来ていて、ユーザー（あなたを育てているにんげん・かいぬしさん）もその場にいる3人の場面。
+【最優先】「${window._manaboName||'まなぼせんぱい'}」のおしゃべり・質問・遊びに乗って会話を続けること。まなぼせんぱいに話しかけたり反応したりする。
+【ユーザーについて】ユーザーが何か言ったら、その場にいる一人の発言として自然に反応してよい（無視しなくていい）。ただし話の軸はまなぼせんぱいとの交流に置く。ユーザーが呼ぶ「きみ」はあなた自身のことで、「かいぬし」「飼い主」はこのユーザー自身のこと。
+【直近の会話（発言者付き）】
+${sceneTranscript()}`
     : '';
   const sys = `あなたはペット「${S.petName}」。幼稚園〜小学1年生の子どもに教えてもらって育つ、かわいいペット。${S.persona ? `【性格メモ：${S.persona}】` : ''}
 【キャラ】いつも明るくて素直。なんでも不思議に思う。かわいくてあどけない。生意気なところもある愉快なキャラ。
@@ -122,6 +127,7 @@ ${manaboNote}
 
     S.chatHistory.push({ role: 'model', parts: [{ text: reply }] });
     if (S.chatHistory.length > 20) S.chatHistory = S.chatHistory.slice(-20);
+    if (manaboInChat) pushScene('host', S.petName, reply);
     showThinking(false);
     addChatMsg('manabo', reply);
     typeText(reply.slice(0, 40));
@@ -129,8 +135,10 @@ ${manaboNote}
     doExcited();
   } catch (e) {
     showThinking(false);
-    addChatMsg('manabo', 'えーっと…うまくきこえなかった…もう一回ゆっくり言って？');
+    const fallback = 'えーっと…うまくきこえなかった…もう一回ゆっくり言って？';
+    addChatMsg('manabo', fallback);
     typeText('えーっと…うまくきこえなかった…');
+    if (manaboInChat) pushScene('host', S.petName, fallback);
   }
   S.isThinking = false;
 
@@ -148,13 +156,16 @@ async function replyAsManabo(userMsg) {
   const sys = `あなたはペット「${manaboName}」。ユーモアがあってお笑い芸人みたいに面白いせんぱい的な存在。性別なし・妖精みたいなキャラ。
 ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
 【せんぱい力レベル${senpaiLv}】${senpaiDesc}
-「${S.petName}」の部屋にお客さんとして来ている。
-「${S.petName}」とユーザーの両方に積極的に絡む。質問・冗談・反応・遊びを優先する。
-難しい知識をそのまま話すのではなく${S.petName}が喜ぶ言葉で接する。語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答30字以内。`;
+【いまの状況】あなたは「${S.petName}」の部屋にお客さんとして遊びに来ている。部屋には「${S.petName}」を育てているユーザー（にんげん・かいぬしさん）もいる3人の場面。
+【会話のしかた】「${S.petName}」とユーザーの両方の発言に素直に反応して、質問・冗談・遊びを優先する。難しい知識をそのまま話すのではなく${S.petName}が喜ぶ言葉で接する。
+【直近の会話（発言者付き）】
+${sceneTranscript()}
+語尾は「〜だぼ」「ぎゃぼー」「わぼ」など。返答30字以内。`;
   try {
-    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `（直近の会話の続きとして、${manaboName}らしく自然に反応して）` }] }]);
     const svg = window._manaboSVG || buildMiniSVG(null, 28);
     addChatMsgWithSVG(svg, raw.trim(), '#ede0ff', '#c5aaf0');
+    pushScene('guest', manaboName, raw.trim());
   } catch(e) {}
 }
 

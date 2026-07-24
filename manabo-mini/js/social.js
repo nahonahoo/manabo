@@ -190,6 +190,19 @@ async function generateJointDiary(type) {
 // ── まなぼを招待 ──
 let manaboInChat = false;
 
+// 招待セッション中の発言を発言者付きで記録する共有ログ。
+// まなぼみに（ホスト）・まなぼ（ゲスト）どちらのプロンプトからも参照し、
+// 「誰が何を言ったか」を見失わないようにする。
+let sceneLog = [];
+function pushScene(who, name, text) {
+  sceneLog.push({ who, name, text });
+  if (sceneLog.length > 14) sceneLog = sceneLog.slice(-14);
+}
+function sceneTranscript() {
+  return sceneLog.map(s => `${s.name}：${s.text}`).join('\n');
+}
+function resetScene() { sceneLog = []; }
+
 async function inviteManabo() {
   if (manaboInChat) return;
   manaboInChat = true;
@@ -278,14 +291,18 @@ ${manaboPersona ? `【${manaboName}の性格メモ：${manaboPersona}】` : ''}
     } catch(e2) {}
   }
   const manaboSVG = buildMiniSVG(manaboAppearance, 28);
+  resetScene();
 
   try {
     const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `${manaboName}が${S.petName}の部屋に遊びに来た。登場の一言を言って。` }] }]);
     addChatMsgWithSVG(manaboSVG, raw.trim(), '#ede0ff', '#c5aaf0');
     typeText(`わあ！${manaboName}がきた！えへへ！`);
+    pushScene('guest', manaboName, raw.trim());
   } catch(e) {
-    addChatMsgWithSVG(manaboSVG, 'ぎゃぼー！元気だぼ？', '#ede0ff', '#c5aaf0');
+    const fallback = 'ぎゃぼー！元気だぼ？';
+    addChatMsgWithSVG(manaboSVG, fallback, '#ede0ff', '#c5aaf0');
     typeText('わあ！まなぼがきた！えへへ！');
+    pushScene('guest', manaboName, fallback);
   }
   bounce(); showHappy(true);
 
@@ -305,15 +322,16 @@ async function byeManabo() {
   document.getElementById('bye-manabo-btn').style.display = 'none';
   const manaboName = window._manaboName || 'まなぼ';
   const manaboSVG = window._manaboSVG || buildMiniSVG(null, 28);
-  addChatMsgWithSVG(manaboSVG, 'じゃあまたね〜だぼ！みにちゃん元気でね！（去り際にツッコむ）', '#ede0ff', '#c5aaf0');
+  const farewell = 'じゃあまたね〜だぼ！みにちゃん元気でね！（去り際にツッコむ）';
+  addChatMsgWithSVG(manaboSVG, farewell, '#ede0ff', '#c5aaf0');
   typeText('まなぼかえっちゃった…またきてね！えへへ');
+  pushScene('guest', manaboName, farewell);
   await generateOmiyage(manaboName);
+  resetScene();
 }
 
 async function generateOmiyage(partnerName) {
-  const recentChat = S.chatHistory.slice(-10)
-    .map(m => `${m.role === 'user' ? 'ユーザー' : partnerName}：${m.parts?.[0]?.text || ''}`)
-    .join('\n');
+  const recentChat = sceneTranscript();
   if (!recentChat.trim()) return;
 
   const sys = `会話ログから「ふたつのペットが一緒に話して生まれた気づき・発見・面白い視点」を1〜3個抽出してください。
