@@ -58,6 +58,7 @@ async function sendChat() {
   petWake();
   addChatMsg('user', txt);
   S.chatHistory.push({ role: 'user', parts: [{ text: txt }] });
+  if (miniInChat) pushScene('user', 'ユーザー（かいぬしさん）', txt);
   showThinking(true);
   showHappy(false);
   doThinkShake();
@@ -68,7 +69,12 @@ async function sendChat() {
 
   // チャットで教えてもらった内容を自動的に知識として保存するかどうかも判定させる
   const miniNote = miniInChat
-    ? `【最重要】今は「${window._miniName||'まなぼみに'}」が部屋に来ている。返答は必ず「${window._miniName||'まなぼみに'}」に向けて話すこと。ユーザーの発言よりも「${window._miniName||'まなぼみに'}」との会話を優先する。ユーザーへの返答は不要。`
+    ? `【いまの状況】「${window._miniName||'まなぼみに'}」が部屋に遊びに来ていて、ユーザー（きみを育てているにんげん・かいぬしさん）もその場にいる3人の場面。
+【最優先】「${window._miniName||'まなぼみに'}」のおしゃべり・質問・遊びに乗って会話を続けること。「${window._miniName||'まなぼみに'}」を主役にした掛け合いにする。
+【ユーザーについて】ユーザーが何か言ったら、その場にいる一人の発言として自然に反応してよい（無視しなくていい）。ただし話の軸は「${window._miniName||'まなぼみに'}」との交流に置き、置き去りにしない。ユーザーが「まなぼ」「きみ」と呼ぶのはきみ自身のことで、「かいぬし」「飼い主」はこのユーザー自身のこと。
+【呼び方の注意】「まなぼせんぱい」「せんぱい」は「${window._miniName||'まなぼみに'}」があなたを呼ぶときだけの敬称。自分から自分をそう呼んだり名乗ったりしない。自分を指すときは名前（${S.petName}）か「ぼく」「おれ」などの一人称を使う。「${window._miniName||'まなぼみに'}」の方が年下（幼稚園〜小1）で、あなたが年上（中学生）。
+【直近の会話（発言者付き）】
+${sceneTranscript()}`
     : '';
   const sys = `あなたはペット「${S.petName}」。中学生に教えてもらって育つキャラ。${S.persona ? `【性格メモ：${S.persona}】` : ''}
 ${miniNote}
@@ -121,6 +127,7 @@ ${miniNote}
 
     S.chatHistory.push({ role: 'model', parts: [{ text: reply }] });
     if (S.chatHistory.length > 20) S.chatHistory = S.chatHistory.slice(-20);
+    if (miniInChat) pushScene('host', S.petName, reply);
     showThinking(false);
     addChatMsg('manabo', reply);
     typeText(reply.slice(0, 40));
@@ -128,8 +135,10 @@ ${miniNote}
     doExcited();
   } catch (e) {
     showThinking(false);
-    addChatMsg('manabo', 'えーっと…うまくきこえなかった…もう一回ゆっくり言って？');
+    const fallback = 'えーっと…うまくきこえなかった…もう一回ゆっくり言って？';
+    addChatMsg('manabo', fallback);
     typeText('えーっと…うまくきこえなかった…');
+    if (miniInChat) pushScene('host', S.petName, fallback);
   }
   S.isThinking = false;
 
@@ -170,12 +179,17 @@ async function replyAsMini(userMsg) {
 ${miniPersona ? `【${miniName}の性格メモ：${miniPersona}】` : ''}
 【成長レベル（知識${miniKnowCount}件）】${replyLvDesc}
 ${knowStr}
-まなぼせんぱい（性別なし・妖精みたいなキャラ）の部屋にいる。
-覚えた知識を自然に話題にしたり得意げに披露したりする。語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
+【いまの状況】あなたは「${S.petName}」（まなぼせんぱい、性別なし・妖精みたいなキャラ）の部屋に遊びに来ているお客さん。部屋にはまなぼせんぱいを育てているユーザー（にんげん・かいぬしさん）もいる3人の場面。
+【会話のしかた】まなぼせんぱいやユーザーが言ったことに素直に反応して、自分からもおしゃべりしたり質問したり遊んだりする。覚えた知識を自然に話題にしたり得意げに披露したりしてもいい。
+【呼び方の注意】「せんぱい」はまなぼだけを呼ぶときの敬称。自分（${miniName}）のことは「せんぱい」と呼ばない・名乗らない。
+【直近の会話（発言者付き）】
+${sceneTranscript()}
+語尾は「〜だよ！」「えへへ」「わあ！」など。返答40字以内。ひらがなメイン。`;
   try {
-    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: userMsg }] }]);
+    const raw = await callGemini(sys, [{ role:'user', parts:[{ text: `（直近の会話の続きとして、${miniName}らしく自然に反応して）` }] }]);
     const svg = window._miniSVG || buildMiniSVG(null, 28);
     addChatMsgWithSVG(svg, raw.trim(), '#fff0e0', '#ffcc90');
+    pushScene('guest', miniName, raw.trim());
   } catch(e) {}
 }
 
