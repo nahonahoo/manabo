@@ -23,6 +23,7 @@ const S = {
   inventory: [],
   craftCount: 0,
   craftDate: '',
+  saleHistory: [],         // 売れたアイテムの記録（新しい順）
   omiyage: [],             // おみやげ知識
   kouryuLv: 0,             // 交流レベル
   partnerName: 'まなぼ',   // 相手の名前
@@ -107,6 +108,7 @@ async function saveState() {
       inventory:  JSON.stringify(S.inventory),
       craftCount: S.craftCount,
       craftDate:  S.craftDate,
+      saleHistory: JSON.stringify(S.saleHistory),
       appearance: JSON.stringify(S.appearance),
     });
     // 保存後に即UI更新
@@ -150,6 +152,12 @@ async function loadState() {
       S.kouryuLv = d.kouryuLv || 0;
       S.petName = d.petName || 'まなぼ';
       S.persona = d.persona || '';
+      S.coins     = d.coins     || 0;
+      S.shopItems = d.shopItems  ? JSON.parse(d.shopItems)  : [];
+      S.inventory = d.inventory  ? JSON.parse(d.inventory)  : [];
+      S.craftCount = d.craftCount || 0;
+      S.craftDate  = d.craftDate  || '';
+      S.saleHistory = d.saleHistory ? JSON.parse(d.saleHistory) : [];
       if (d.appearance) {
         try { Object.assign(S.appearance, JSON.parse(d.appearance)); } catch(_) {}
       }

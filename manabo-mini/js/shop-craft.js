@@ -116,6 +116,22 @@ function renderInventory() {
           ${!item.sold ? `<button onclick="delistFromShop(${i})" style="flex-shrink:0;padding:4px 9px;border-radius:99px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;font-family:inherit;cursor:pointer">とりさげ</button>` : ''}
         </div>`;
       }).join('');
+  const historyEl = document.getElementById('inv-history');
+  if (historyEl) {
+    historyEl.innerHTML = (!S.saleHistory || S.saleHistory.length === 0)
+      ? '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">まだうれたアイテムはないよ</div>'
+      : S.saleHistory.map(item => {
+          const ri = RARITY_INFO[item.rarity];
+          const date = item.soldAt ? new Date(item.soldAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '';
+          return `<div style="background:#fdf3ff;border:1px solid #f0d0ff;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
+            <div style="font-size:1.4rem">${ri.emoji}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
+              <div style="font-size:.72rem;color:#c08040">¥${item.price.toLocaleString()} ・ ${esc(item.buyerEmoji||'')}${esc(item.buyerName||'だれか')}がかった ・ ${date}</div>
+            </div>
+          </div>`;
+        }).join('');
+  }
 }
 async function openInventory() {
   document.getElementById('inventory-modal').style.display='flex';
@@ -127,6 +143,7 @@ async function openInventory() {
       S.shopItems = d.shopItems ? JSON.parse(d.shopItems) : [];
       S.inventory = d.inventory ? JSON.parse(d.inventory) : [];
       S.coins = d.coins || S.coins;
+      S.saleHistory = d.saleHistory ? JSON.parse(d.saleHistory) : S.saleHistory;
       updateHeader();
     }
   } catch(e) {}
