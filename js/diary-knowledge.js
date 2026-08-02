@@ -101,7 +101,7 @@ JSONのみ返す（コードブロック不要）:
     };
 
     S.inventory.push(workItem);
-    await saveState();
+    await saveShared({ inventory: JSON.stringify(S.inventory) });
     renderInventory();
 
     const ri = RARITY_INFO[rarity];

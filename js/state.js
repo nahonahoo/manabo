@@ -94,11 +94,10 @@ function loadApiKeyLocal() {
   return localStorage.getItem('manabo_api') || '';
 }
 
-// 「まなぼみに」やショップなど外部から書き換えられるフィールド。
-// saveState()の丸ごと保存には含めず、変更した操作だけがsaveShared()で狙って保存する
+// coins/shopItems/inventory/craftCount/craftDate/saleHistory/collection/lettersは
+// 「まなぼみに」やショップなど外部から書き換えられるため、saveState()の丸ごと保存には含めない。
+// 変更した操作だけがsaveShared()で狙って保存する
 // （そうしないと、古いメモリのまま別の保存が走った時に外部の変更を消してしまう）
-const SHARED_FIELDS = ['coins', 'shopItems', 'inventory', 'craftCount', 'craftDate', 'saleHistory', 'collection', 'letters'];
-
 async function saveState() {
   try {
     const db = getDB();

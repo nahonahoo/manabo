@@ -249,7 +249,7 @@ JSONのみ（コードブロック不要）:
       listedAt:null, sold:false, craftedAt:Date.now(), isWork:true,
     };
     S.inventory.push(workItem);
-    await saveState();
+    await saveShared({ inventory: JSON.stringify(S.inventory) });
     renderInventory();
 
     const ri = RARITY_INFO[rarity];
