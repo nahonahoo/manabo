@@ -126,6 +126,7 @@ async function loadReceivedLetters() {
   try {
     const d = await fsReadPartner(MY_ID) || {};
     const letters = d.letters ? JSON.parse(d.letters) : [];
+    S.letters = letters; // 保存時に消えないようキャッシュを最新化
     if (letters.length === 0) { el.textContent = 'まだお手紙ないよ〜'; return; }
     el.innerHTML = letters.slice().reverse().map(l => `
       <div style="background:#fff0e0;border-radius:10px;padding:9px 12px;margin-bottom:6px">
