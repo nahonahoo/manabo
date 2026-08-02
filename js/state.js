@@ -94,6 +94,11 @@ function loadApiKeyLocal() {
   return localStorage.getItem('manabo_api') || '';
 }
 
+// 「まなぼみに」やショップなど外部から書き換えられるフィールド。
+// saveState()の丸ごと保存には含めず、変更した操作だけがsaveShared()で狙って保存する
+// （そうしないと、古いメモリのまま別の保存が走った時に外部の変更を消してしまう）
+const SHARED_FIELDS = ['coins', 'shopItems', 'inventory', 'craftCount', 'craftDate', 'saleHistory', 'collection', 'letters'];
+
 async function saveState() {
   try {
     const db = getDB();
@@ -109,16 +114,8 @@ async function saveState() {
       kouryuLv:  S.kouryuLv,
       petName:    S.petName,
       persona:    S.persona,
-      coins:      S.coins,
-      shopItems:  JSON.stringify(S.shopItems),
-      inventory:  JSON.stringify(S.inventory),
-      craftCount: S.craftCount,
-      craftDate:  S.craftDate,
-      saleHistory: JSON.stringify(S.saleHistory),
-      collection: JSON.stringify(S.collection),
-      letters: JSON.stringify(S.letters),
       appearance: JSON.stringify(S.appearance),
-    });
+    }, { merge: true });
     // 保存成功後にヘッダーだけ更新（重複を避けるため最小限）
     updateHeader();
   } catch(e) {
@@ -128,6 +125,18 @@ async function saveState() {
         level: S.level, xp: S.xp, xpMax: S.xpMax, knowledge: S.knowledge
       }));
     } catch(_) {}
+  }
+}
+
+// coins/shopItems/inventory/craftCount/craftDate/saleHistory/collection/letters専用の部分保存。
+// 渡したフィールドだけをマージ書き込みする（他のフィールドは一切触らない）
+async function saveShared(fields) {
+  try {
+    const db = getDB();
+    await db.collection('manabo').doc(MANABO_ID).set(fields, { merge: true });
+    updateHeader();
+  } catch(e) {
+    console.warn('Firestore save error (shared):', e);
   }
 }
 

@@ -61,8 +61,12 @@ async function craftNewItem() {
   // UIを先に即時更新（Firebaseの応答を待たない）
   updateHeader();
   renderInventory();
-  // バックグラウンドで保存
-  saveState().catch(e => console.warn('save error', e));
+  // バックグラウンドで保存（inventory等はsaveState()には含めず専用保存で）
+  saveShared({
+    inventory: JSON.stringify(S.inventory),
+    craftCount: S.craftCount,
+    craftDate: S.craftDate,
+  }).catch(e => console.warn('save error', e));
 
   // 発明結果を表示
   document.getElementById('craft-result-modal').style.display = 'flex';
@@ -100,7 +104,7 @@ async function listItemToShop(inventoryIdx) {
   S.shopItems.push(shopItem);
   S.inventory.splice(inventoryIdx, 1);
   try {
-    await saveState();
+    await saveShared({ shopItems: JSON.stringify(S.shopItems), inventory: JSON.stringify(S.inventory) });
     console.log('出品保存成功 shopItems:', S.shopItems.length);
   } catch(e) {
     console.error('出品保存失敗:', e);
@@ -119,7 +123,7 @@ async function delistFromShop(shopIdx) {
   if (item.sold) { showToast('もう売れてるぼ！'); return; }
   S.inventory.push({ ...item, listedAt: null });
   S.shopItems.splice(shopIdx, 1);
-  await saveState();
+  await saveShared({ shopItems: JSON.stringify(S.shopItems), inventory: JSON.stringify(S.inventory) });
   renderInventory();
   showToast(`「${item.name}」を取り下げたぼ`);
 }
@@ -269,10 +273,13 @@ async function buyFromPartner(shopId) {
     saleHistory: JSON.stringify(saleHistory),
   });
 
-  // 自分側を更新（買った物は再出品できない「コレクション」へ）
-  S.coins -= freshItem.price;
+  // 自分側を更新（買った物は再出品できない「コレクション」へ）。
+  // 自分の最新coinsも取得してから引く（自分のショップが同時に売れている可能性があるため）
+  const myFresh = await fsReadPartner(MY_ID) || {};
+  S.coins = (myFresh.coins !== undefined ? myFresh.coins : S.coins) - freshItem.price;
+  S.collection = myFresh.collection ? JSON.parse(myFresh.collection) : S.collection;
   S.collection.unshift({ name: freshItem.name, desc: freshItem.desc, rarity: freshItem.rarity, price: freshItem.price, from: partnerNameCache, obtainedAt: Date.now() });
-  await saveState();
+  await saveShared({ coins: S.coins, collection: JSON.stringify(S.collection) });
   renderInventory();
   updateCollectionBadge();
   showToast(`✨「${freshItem.name}」を買ったぼ！`);

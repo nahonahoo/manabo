@@ -52,7 +52,11 @@ async function craftNewItem() {
   S.inventory.push(newItem);
   updateHeader();
   renderInventory();
-  saveState().catch(e => console.warn('save error', e));
+  saveShared({
+    inventory: JSON.stringify(S.inventory),
+    craftCount: S.craftCount,
+    craftDate: S.craftDate,
+  }).catch(e => console.warn('save error', e));
   document.getElementById('craft-result-modal').style.display = 'flex';
   document.getElementById('craft-result-emoji').textContent = ri.emoji;
   document.getElementById('craft-result-name').textContent = item.name;
@@ -77,7 +81,7 @@ async function listItemToShop(i) {
   if (!item) return;
   S.shopItems.push({ ...item, listedAt: Date.now(), sold: false });
   S.inventory.splice(i, 1);
-  await saveState(); renderInventory();
+  await saveShared({ shopItems: JSON.stringify(S.shopItems), inventory: JSON.stringify(S.inventory) }); renderInventory();
   showToast(`✨「${item.name}」をショップにだしたよ！`);
 }
 async function delistFromShop(i) {
@@ -85,7 +89,7 @@ async function delistFromShop(i) {
   if (!item || item.sold) return;
   S.inventory.push({ ...item, listedAt: null });
   S.shopItems.splice(i, 1);
-  await saveState(); renderInventory();
+  await saveShared({ shopItems: JSON.stringify(S.shopItems), inventory: JSON.stringify(S.inventory) }); renderInventory();
 }
 function renderInventory() {
   document.getElementById('inv-coins').textContent = S.coins.toLocaleString();
@@ -211,9 +215,11 @@ async function buyFromPartner(shopId) {
     saleHistory: JSON.stringify(saleHistory),
   });
 
-  S.coins -= freshItem.price;
+  const myFresh = await fsReadPartner(MY_ID) || {};
+  S.coins = (myFresh.coins !== undefined ? myFresh.coins : S.coins) - freshItem.price;
+  S.collection = myFresh.collection ? JSON.parse(myFresh.collection) : S.collection;
   S.collection.unshift({ name: freshItem.name, desc: freshItem.desc, rarity: freshItem.rarity, price: freshItem.price, from: partnerNameCache, obtainedAt: Date.now() });
-  await saveState();
+  await saveShared({ coins: S.coins, collection: JSON.stringify(S.collection) });
   renderInventory();
   updateCollectionBadge();
   showToast(`✨「${freshItem.name}」をかったよ！`);
