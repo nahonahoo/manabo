@@ -165,6 +165,26 @@ function renderInventory() {
       </div>`;
     }).join('');
   }
+
+  // 販売記録
+  const historyEl = document.getElementById('inv-history');
+  if (historyEl) {
+    if (!S.saleHistory || S.saleHistory.length === 0) {
+      historyEl.innerHTML = '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">まだ売れたアイテムはないぼ</div>';
+    } else {
+      historyEl.innerHTML = S.saleHistory.map(item => {
+        const ri = RARITY_INFO[item.rarity];
+        const date = item.soldAt ? new Date(item.soldAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '';
+        return `<div style="background:#f7f3ff;border:1px solid #e8ddf5;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
+          <div style="font-size:1.4rem;flex-shrink:0">${ri.emoji}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
+            <div style="font-size:.72rem;color:#7a6a9a">¥${item.price.toLocaleString()} ・ ${esc(item.buyerEmoji||'')}${esc(item.buyerName||'だれか')}が購入 ・ ${date}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 async function openInventory() {
@@ -177,6 +197,7 @@ async function openInventory() {
       S.shopItems = d.shopItems ? JSON.parse(d.shopItems) : [];
       S.inventory = d.inventory ? JSON.parse(d.inventory) : [];
       S.coins = d.coins || S.coins;
+      S.saleHistory = d.saleHistory ? JSON.parse(d.saleHistory) : S.saleHistory;
       updateHeader();
     }
   } catch(e) {}
