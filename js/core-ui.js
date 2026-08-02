@@ -59,6 +59,7 @@ function updateHeader() {
     const remain = (isOld || elapsed >= 24*60*60*1000) ? 2 : Math.max(0, 2 - S.craftCount);
     craftEl.textContent = remain;
   }
+  if (typeof updateCollectionBadge === 'function') updateCollectionBadge();
 }
 
 function gainXP(n) {

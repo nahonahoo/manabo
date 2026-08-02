@@ -104,7 +104,11 @@
     </div>
 
     <!-- PET -->
-    <div id="pet-area">
+    <div id="pet-area" style="position:relative">
+      <button id="collection-btn" onclick="openCollection()" title="コレクション" style="position:absolute;right:16px;bottom:6px;width:40px;height:40px;border-radius:50%;border:2px solid #f0b000;background:#fff8e0;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);padding:0">
+        🎁
+        <span id="collection-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ff4d6d;color:#fff;font-size:10px;font-weight:700;border-radius:99px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;align-items:center;justify-content:center">0</span>
+      </button>
       <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible;cursor:pointer">
         <g id="pet-root">
 
@@ -545,8 +549,22 @@
     <div id="inv-items" style="display:flex;flex-direction:column;gap:6px"></div>
     <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">ショップしゅっぴんちゅう（<a href="../manabo-shop/?from=mini" target="_blank" style="color:#c06010;text-decoration:none">ショップをみる↗</a>）</div>
     <div id="inv-shop" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div id="inv-partner-shop-label" style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">まなぼのおみせ</div>
+    <div id="inv-partner-shop" style="display:flex;flex-direction:column;gap:6px"></div>
     <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">はんばいきろく</div>
     <div id="inv-history" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
+
+<!-- コレクションボックスモーダル -->
+<div id="collection-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;max-height:85vh;overflow-y:scroll;-webkit-overflow-scrolling:touch">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">🎁 コレクション</h3>
+      <button onclick="closeCollection()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <div style="font-size:.75rem;color:#a090c0">まなぼからかったアイテムはここにのこるよ。もううることはできないよ。</div>
+    <div id="collection-items" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
 </div>
 
@@ -555,13 +573,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <!-- app.js を機能ごとに分割（挙動は変更なし・読み込み順に依存関係なし） -->
 <script src="js/data.js?v=2"></script>
-<script src="js/state.js?v=3"></script>
-<script src="js/core-ui.js?v=2"></script>
+<script src="js/state.js?v=4"></script>
+<script src="js/core-ui.js?v=3"></script>
 <script src="js/pet-animation.js?v=2"></script>
 <script src="js/chat.js?v=2"></script>
 <script src="js/diary-knowledge.js?v=2"></script>
 <script src="js/customize.js?v=2"></script>
 <script src="js/social.js?v=2"></script>
-<script src="js/shop-craft.js?v=3"></script>
+<script src="js/shop-craft.js?v=5"></script>
 </body>
 </html>

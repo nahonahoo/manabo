@@ -202,7 +202,115 @@ async function openInventory() {
     }
   } catch(e) {}
   renderInventory();
+  loadPartnerShop();
 }
 function closeInventory() {
   document.getElementById('inventory-modal').style.display = 'none';
+}
+
+// ── パートナー（まなぼみに）のお店で買い物 ──
+let partnerShopCache = [];
+let partnerNameCache = 'まなぼみに';
+
+async function loadPartnerShop() {
+  const el = document.getElementById('inv-partner-shop');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">読み込み中…</div>';
+  const d = await fsReadPartner(PARTNER_ID);
+  if (!d) { el.innerHTML = '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">読み込めなかったぼ…</div>'; return; }
+  partnerNameCache = d.petName || 'まなぼみに';
+  const items = d.shopItems ? JSON.parse(d.shopItems) : [];
+  partnerShopCache = items.filter(i => !i.sold);
+  renderPartnerShop();
+}
+
+function renderPartnerShop() {
+  const el = document.getElementById('inv-partner-shop');
+  if (!el) return;
+  const label = document.getElementById('inv-partner-shop-label');
+  if (label) label.textContent = `${partnerNameCache}のおみせ`;
+  el.innerHTML = partnerShopCache.length === 0
+    ? '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">今は何も出品されてないぼ</div>'
+    : partnerShopCache.map(item => {
+        const ri = RARITY_INFO[item.rarity];
+        return `<div style="background:#eef7ff;border:1px solid #b8d8f0;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
+          <div style="font-size:1.4rem;flex-shrink:0">${ri.emoji}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
+            <div style="font-size:.72rem;color:#7a6a9a">¥${item.price.toLocaleString()} / ${ri.name}</div>
+          </div>
+          <button onclick="buyFromPartner('${item.shopId}')" style="flex-shrink:0;padding:4px 10px;border-radius:99px;border:1px solid #4090c0;background:#e0f0ff;color:#1060a0;font-size:.72rem;font-family:inherit;cursor:pointer">買う</button>
+        </div>`;
+      }).join('');
+}
+
+async function buyFromPartner(shopId) {
+  const item = partnerShopCache.find(i => i.shopId === shopId);
+  if (!item) return;
+  if (S.coins < item.price) { showToast('お金が足りないぼ…'); return; }
+
+  // 買う直前にもう一度最新を取得（売れ違い防止）
+  const fresh = await fsReadPartner(PARTNER_ID);
+  if (!fresh) { showToast('通信に失敗したぼ…もう一度試してほしいぼ'); return; }
+  let shopItems = fresh.shopItems ? JSON.parse(fresh.shopItems) : [];
+  const freshItem = shopItems.find(i => i.shopId === shopId && !i.sold);
+  if (!freshItem) { showToast('もう売れちゃったみたいだぼ…'); await loadPartnerShop(); return; }
+
+  // パートナー側を更新
+  shopItems = shopItems.filter(i => i.shopId !== shopId);
+  let inventory = fresh.inventory ? JSON.parse(fresh.inventory) : [];
+  inventory = inventory.filter(i => i.shopId !== shopId);
+  let saleHistory = fresh.saleHistory ? JSON.parse(fresh.saleHistory) : [];
+  saleHistory = [{ name: freshItem.name, price: freshItem.price, rarity: freshItem.rarity, buyerName: S.petName, buyerEmoji: '💌', soldAt: Date.now() }, ...saleHistory].slice(0, 200);
+  await fsWritePartner(PARTNER_ID, {
+    coins: (fresh.coins || 0) + freshItem.price,
+    shopItems: JSON.stringify(shopItems),
+    inventory: JSON.stringify(inventory),
+    saleHistory: JSON.stringify(saleHistory),
+  });
+
+  // 自分側を更新（買った物は再出品できない「コレクション」へ）
+  S.coins -= freshItem.price;
+  S.collection.unshift({ name: freshItem.name, desc: freshItem.desc, rarity: freshItem.rarity, price: freshItem.price, from: partnerNameCache, obtainedAt: Date.now() });
+  await saveState();
+  renderInventory();
+  updateCollectionBadge();
+  showToast(`✨「${freshItem.name}」を買ったぼ！`);
+  typeText(`${partnerNameCache}から「${freshItem.name}」を買ったんだぼ！`);
+  await loadPartnerShop();
+}
+
+// ── コレクションボックス（買った物・再出品不可） ──
+function updateCollectionBadge() {
+  const badge = document.getElementById('collection-badge');
+  if (!badge) return;
+  const n = S.collection ? S.collection.length : 0;
+  badge.style.display = n > 0 ? 'flex' : 'none';
+  badge.textContent = n > 99 ? '99+' : n;
+}
+
+function renderCollection() {
+  const el = document.getElementById('collection-items');
+  if (!el) return;
+  el.innerHTML = (!S.collection || S.collection.length === 0)
+    ? '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">まだ何も買ってないぼ</div>'
+    : S.collection.map(item => {
+        const ri = RARITY_INFO[item.rarity];
+        const date = item.obtainedAt ? new Date(item.obtainedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '';
+        return `<div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
+          <div style="font-size:1.4rem;flex-shrink:0">${ri.emoji}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
+            <div style="font-size:.72rem;color:#7a6a9a">¥${item.price.toLocaleString()} ・ ${esc(item.from)}から ・ ${date}</div>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+function openCollection() {
+  document.getElementById('collection-modal').style.display = 'flex';
+  renderCollection();
+}
+function closeCollection() {
+  document.getElementById('collection-modal').style.display = 'none';
 }
