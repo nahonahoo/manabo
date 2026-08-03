@@ -53,6 +53,18 @@ html,body{height:100%;background:var(--cream);overflow:hidden;
 .pet-bounce{animation:pb .35s ease}
 @keyframes pb{0%{transform:scale(1)}35%{transform:scale(1.1) translateY(-5px)}65%{transform:scale(.97)}100%{transform:scale(1)}}
 
+/* ── でんしゃのたび：出発アニメーション ── */
+#travel-train-wrap{animation:train-travel 9.6s linear forwards}
+@keyframes train-travel{0%{transform:translateX(-25vw)}100%{transform:translateX(125vw)}}
+#travel-train{animation:train-clack .28s linear infinite}
+@keyframes train-clack{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-3px) rotate(-1deg)}50%{transform:translateY(0) rotate(0deg)}75%{transform:translateY(-2px) rotate(1deg)}}
+#travel-ties{background:repeating-linear-gradient(90deg,#7a6a5a 0 8px,transparent 8px 30px);animation:tie-scroll .4s linear infinite}
+@keyframes tie-scroll{from{background-position-x:0}to{background-position-x:-30px}}
+#travel-clouds{animation:cloud-scroll 14s linear infinite}
+@keyframes cloud-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.travel-clack-pop{animation:clack-pop .7s ease-out}
+@keyframes clack-pop{0%{opacity:0;transform:translateY(6px) scale(.8)}30%{opacity:1;transform:translateY(0) scale(1.05)}70%{opacity:1}100%{opacity:0;transform:translateY(-10px) scale(1)}}
+
 /* ── SPEECH ── */
 .speech-wrap{padding:0 13px 7px;background:var(--white)}
 .bubble{background:var(--pu-light);border-radius:16px 16px 16px 4px;padding:9px 13px;

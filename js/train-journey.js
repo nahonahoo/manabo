@@ -269,11 +269,69 @@ function closeTrainJourney() {
   document.getElementById('train-journey-modal').style.display = 'none';
 }
 
+let trainTravelInProgress = false;
+
 async function buyTrainCourse(courseId) {
+  if (trainTravelInProgress) return;
   const course = TRAIN_COURSES.find(c => c.id === courseId);
   if (!course) return;
   if (S.coins < course.price) { showToast('お金が足りないぼ…'); return; }
 
+  trainTravelInProgress = true;
+  await playTrainAnimation(course);
+  await finishTrainCourse(course);
+  trainTravelInProgress = false;
+}
+
+// 電車が横切る出発アニメーション（約10秒）
+function playTrainAnimation(course) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('train-travel-overlay');
+    const wrap = document.getElementById('travel-train-wrap');
+    const body = document.getElementById('travel-train-body');
+    const nose = document.getElementById('travel-train-nose');
+    const ties = document.getElementById('travel-ties');
+    const clouds = document.getElementById('travel-clouds');
+    const label = document.getElementById('travel-label');
+    const pop = document.getElementById('travel-clack-pop');
+    if (!overlay || !wrap) { resolve(); return; }
+
+    const v = course.vehicle ? VEHICLE_TYPES[course.vehicle] : null;
+    const color = v ? v.plate : '#6B9B4F';
+    if (body) body.setAttribute('fill', color);
+    if (nose) nose.setAttribute('fill', color);
+    if (label) label.textContent = `${v ? v.name : '電車'}にのって「${course.name}」へしゅっぱつ！`;
+
+    // アニメーションを最初から再生し直すため、いったんクラス/アニメーションをリセット
+    [wrap, document.getElementById('travel-train'), ties, clouds].forEach(el => {
+      if (!el) return;
+      el.style.animation = 'none';
+      void el.offsetWidth; // reflow
+      el.style.animation = '';
+    });
+
+    overlay.style.display = 'flex';
+
+    const words = ['ガタン', 'ゴトン', 'ガタン', 'ゴトン'];
+    let wi = 0;
+    const popTimer = setInterval(() => {
+      if (!pop) return;
+      pop.textContent = words[wi % words.length];
+      pop.classList.remove('travel-clack-pop');
+      void pop.offsetWidth;
+      pop.classList.add('travel-clack-pop');
+      wi++;
+    }, 900);
+
+    setTimeout(() => {
+      clearInterval(popTimer);
+      overlay.style.display = 'none';
+      resolve();
+    }, 9800);
+  });
+}
+
+async function finishTrainCourse(course) {
   S.coins -= course.price;
   const visited = new Set(S.trainProgress.visitedStations);
   course.stationIds.forEach(id => visited.add(id));

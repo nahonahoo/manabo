@@ -13,7 +13,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 
   <script>
     // Service Workerキャッシュを無効化（スマホのキャッシュ対策）
@@ -695,13 +695,42 @@
       <button onclick="closeTrainJourney()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
     </div>
     <div id="train-progress-text" style="font-size:.8rem;font-weight:700;color:#7c5cbf;text-align:center;background:#ede0ff;border-radius:99px;padding:6px">東海制覇：0/0駅（0%）</div>
-    <div id="train-map" style="overflow:auto;max-height:340px;border-radius:12px;-webkit-overflow-scrolling:touch"></div>
+    <div id="train-map" style="overflow:auto;height:340px;flex-shrink:0;border-radius:12px;-webkit-overflow-scrolling:touch"></div>
     <div style="font-size:.68rem;color:#a090c0;text-align:center">↔ 指でスクロールして見られるよ</div>
     <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">路線せいはじょうきょう</div>
     <div id="train-legend" style="display:flex;flex-direction:column;gap:0"></div>
     <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">りょこうコース</div>
     <div id="train-course-shop" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
+</div>
+
+<!-- でんしゃのたび：出発アニメーション -->
+<div id="train-travel-overlay" style="display:none;position:fixed;inset:0;background:linear-gradient(180deg,#8ed4f0 0%,#bfe8f5 55%,#e8d9a8 100%);z-index:600;flex-direction:column;align-items:center;justify-content:flex-end;overflow:hidden">
+  <div id="travel-clouds" style="position:absolute;top:12%;left:0;width:200%;height:40px;display:flex;gap:140px">
+    <div style="width:70px;height:24px;background:#fff;border-radius:99px;opacity:.85"></div>
+    <div style="width:90px;height:28px;background:#fff;border-radius:99px;opacity:.7"></div>
+    <div style="width:60px;height:20px;background:#fff;border-radius:99px;opacity:.9"></div>
+    <div style="width:80px;height:24px;background:#fff;border-radius:99px;opacity:.75"></div>
+    <div style="width:70px;height:24px;background:#fff;border-radius:99px;opacity:.85"></div>
+    <div style="width:90px;height:28px;background:#fff;border-radius:99px;opacity:.7"></div>
+  </div>
+  <div id="travel-clack-pop" style="position:absolute;top:34%;left:50%;transform:translateX(-50%);font-size:1.4rem;font-weight:800;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.35);pointer-events:none"></div>
+  <div style="position:absolute;bottom:32%;left:0;width:100%;height:5px;background:#7a6a5a"></div>
+  <div id="travel-ties" style="position:absolute;bottom:30%;left:0;width:100%;height:10px"></div>
+  <div id="travel-train-wrap" style="position:absolute;bottom:32%;left:0">
+    <div id="travel-train">
+      <svg viewBox="0 0 90 44" width="120" height="58">
+        <rect id="travel-train-body" x="4" y="8" width="72" height="26" rx="8" fill="#6B9B4F"/>
+        <rect x="14" y="14" width="14" height="12" rx="2" fill="#dff0ff"/>
+        <rect x="34" y="14" width="14" height="12" rx="2" fill="#dff0ff"/>
+        <rect x="54" y="14" width="14" height="12" rx="2" fill="#dff0ff"/>
+        <path id="travel-train-nose" d="M76,10 L88,20 L76,32 Z" fill="#6B9B4F"/>
+        <circle cx="20" cy="36" r="5" fill="#333"/>
+        <circle cx="60" cy="36" r="5" fill="#333"/>
+      </svg>
+    </div>
+  </div>
+  <div id="travel-label" style="position:absolute;bottom:10%;left:0;right:0;text-align:center;font-size:.85rem;font-weight:700;color:#3a2e4a;padding:0 2rem"></div>
 </div>
 
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
@@ -716,7 +745,7 @@
 <script src="js/diary-knowledge.js?v=3"></script>
 <script src="js/customize.js?v=2"></script>
 <script src="js/social.js?v=3"></script>
-<script src="js/train-journey.js?v=3"></script>
+<script src="js/train-journey.js?v=4"></script>
 <script src="js/shop-craft.js?v=8"></script>
 </body>
 </html>
