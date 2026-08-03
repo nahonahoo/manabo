@@ -309,7 +309,16 @@ function renderCollection() {
             <div style="flex-shrink:0">${line ? buildMedalSVG(line, 32) : '🎖'}</div>
             <div style="flex:1;min-width:0">
               <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
-              <div style="font-size:.72rem;color:#7a6a9a">🚃 でんしゃのたび記念 ・ ${date}</div>
+              <div style="font-size:.72rem;color:#7a6a9a">🚃 でんしゃのたび記念（路線） ・ ${date}</div>
+            </div>
+          </div>`;
+        }
+        if (item.type === 'vehicle-medal') {
+          return `<div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
+            <div style="flex-shrink:0">${VEHICLE_TYPES[item.vehicleId] ? buildVehicleMedalSVG(item.vehicleId, 36) : '🎖'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
+              <div style="font-size:.72rem;color:#7a6a9a">🚃 でんしゃのたび記念（車両） ・ ${date}</div>
             </div>
           </div>`;
         }

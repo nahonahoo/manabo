@@ -63,29 +63,93 @@ const STATION_POS = {
   takabata:[180,590], fushimi:[190,500], sakae:[210,450], fujigaoka:[190,330],
 };
 
+// 駅名のふりがな
+const STATION_READING = {
+  gifu:'ぎふ', 'owari-ichinomiya':'おわりいちのみや', nagoya:'なごや', atsuta:'あつた',
+  obu:'おおぶ', kariya:'かりや', anjo:'あんじょう', okazaki:'おかざき', gamagori:'がまごおり', toyohashi:'とよはし',
+  chikusa:'ちくさ', kozoji:'こうぞうじ', tajimi:'たじみ', toki:'ときし', ena:'えな', nakatsugawa:'なかつがわ',
+  hatta:'はった', kuwana:'くわな', yokkaichi:'よっかいち', kameyama:'かめやま',
+  'kintetsu-nagoya':'きんてつなごや', tsu:'つ',
+  higashiura:'ひがしうら', handa:'はんだ', taketoyo:'たけとよ',
+  'mikawa-anjo':'みかわあんじょう', 'gifu-hashima':'ぎふはしま',
+  'higashi-okazaki':'ひがしおかざき', chiryu:'ちりゅう', 'jingu-mae':'じんぐうまえ', 'meitetsu-nagoya':'めいてつなごや', 'meitetsu-gifu':'めいてつぎふ',
+  sanage:'さなげ', 'toyota-shi':'とよたし', hekinan:'へきなん',
+  akaike:'あかいけ',
+  takabata:'たかばた', fushimi:'ふしみ', sakae:'さかえ', fujigaoka:'ふじがおか',
+};
+
+// 路線図の背景（ざっくりした地形）。楕円を重ねて東海地方っぽいシルエットにする
+const LAND_SHAPE = [
+  { cx:450, cy:250, rx:440, ry:230 }, // 北側（中央線方面）
+  { cx:450, cy:420, rx:440, ry:110 }, // メインの東西帯（東海道本線）
+  { cx:250, cy:460, rx:190, ry:100 }, // 名古屋南（地下鉄クラスター）
+  { cx:430, cy:480, rx:75,  ry:55  }, // 知多半島のつけね
+  { cx:420, cy:590, rx:60,  ry:100 }, // 知多半島
+  { cx:415, cy:665, rx:45,  ry:45  }, // 知多半島の先端
+  { cx:210, cy:470, rx:100, ry:60  }, // 三重方面のつけね
+  { cx:260, cy:560, rx:120, ry:80  }, // 三重方面
+  { cx:290, cy:635, rx:100, ry:55  }, // 三重方面の南
+  { cx:580, cy:580, rx:150, ry:110 }, // 三河・豊田方面の内陸
+];
+
+// 山アイコン（雰囲気だけの飾り）
+const MOUNTAIN_ICONS = [ [560,220], [630,170], [700,250], [130,250] ];
+
 // ── 旅行コース商品（¥3,000〜¥100,000）。路線をどう辿るかはお任せ設計、重複あり ──
 const TRAIN_COURSES = [
   { id:'c1', name:'となりまちさんぽ', price:3000, desc:'大府から半田までのんびり各駅停車の旅。',
-    lines:['taketoyo'], stationIds:['obu','higashiura','handa'] },
+    lines:['taketoyo'], stationIds:['obu','higashiura','handa'], vehicle:'jr-local' },
   { id:'c2', name:'豊田市内ぶらり旅', price:5000, desc:'猿投・豊田市・赤池をまわるミニトリップ。',
-    lines:['mikawa','toyota-line'], stationIds:['sanage','toyota-shi','akaike'] },
+    lines:['mikawa','toyota-line'], stationIds:['sanage','toyota-shi','akaike'], vehicle:'meitetsu-local' },
   { id:'c3', name:'岡崎までおでかけ', price:8000, desc:'刈谷・安城を通って岡崎まで東海道本線でおでかけ。',
-    lines:['tokaido'], stationIds:['kariya','anjo','okazaki'] },
+    lines:['tokaido'], stationIds:['kariya','anjo','okazaki'], vehicle:'jr-rapid' },
   { id:'c4', name:'名古屋地下たんけん', price:12000, desc:'東山線に乗って名古屋の地下をたんけん。',
-    lines:['higashiyama'], stationIds:['takabata','fushimi','sakae','nagoya','fujigaoka'] },
+    lines:['higashiyama'], stationIds:['takabata','fushimi','sakae','nagoya','fujigaoka'], vehicle:'subway' },
   { id:'c5', name:'三河湾ぐるりツアー', price:18000, desc:'豊橋から知立を通って碧南まで、名鉄でぐるり。',
-    lines:['meitetsu-nagoya','mikawa'], stationIds:['toyohashi','higashi-okazaki','chiryu','jingu-mae','meitetsu-nagoya','hekinan'] },
+    lines:['meitetsu-nagoya','mikawa'], stationIds:['toyohashi','higashi-okazaki','chiryu','jingu-mae','meitetsu-nagoya','hekinan'], vehicle:'meitetsu-express' },
   { id:'c6', name:'桑名・四日市の旅', price:25000, desc:'関西本線と近鉄でまわる三重県の旅。',
-    lines:['kansai','kintetsu-nagoya'], stationIds:['hatta','kuwana','yokkaichi','kameyama','kintetsu-nagoya','tsu'] },
+    lines:['kansai','kintetsu-nagoya'], stationIds:['hatta','kuwana','yokkaichi','kameyama','kintetsu-nagoya','tsu'], vehicle:'kintetsu-express' },
   { id:'c7', name:'中央線秘境ツアー', price:35000, desc:'千種から中津川まで、山あいの中央本線を制覇。',
-    lines:['chuo'], stationIds:['chikusa','kozoji','tajimi','toki','ena','nakatsugawa'] },
+    lines:['chuo'], stationIds:['chikusa','kozoji','tajimi','toki','ena','nakatsugawa'], vehicle:'jr-ltdexpress' },
   { id:'c8', name:'新幹線ぴゅーん', price:50000, desc:'のぞみ・ひかりで豊橋から岐阜羽島まで一気にワープ。',
-    lines:['shinkansen'], stationIds:['toyohashi','mikawa-anjo','gifu-hashima'] },
+    lines:['shinkansen'], stationIds:['toyohashi','mikawa-anjo','gifu-hashima'], vehicle:'shinkansen' },
   { id:'c9', name:'東海道本線コンプリート', price:70000, desc:'豊橋から岐阜まで、東海道本線を端から端まで完全制覇。',
-    lines:['tokaido'], stationIds:['toyohashi','gamagori','okazaki','anjo','kariya','obu','atsuta','nagoya','owari-ichinomiya','gifu'] },
+    lines:['tokaido'], stationIds:['toyohashi','gamagori','okazaki','anjo','kariya','obu','atsuta','nagoya','owari-ichinomiya','gifu'], vehicle:'jr-shinkaisoku' },
   { id:'c10', name:'東海オールスター大旅行', price:100000, desc:'名鉄岐阜・武豊など、残った駅を全部まわる東海制覇の総仕上げ。',
-    lines:['meitetsu-nagoya','taketoyo'], stationIds:['meitetsu-gifu','taketoyo','meitetsu-nagoya','nagoya','chiryu'] },
+    lines:['meitetsu-nagoya','taketoyo'], stationIds:['meitetsu-gifu','taketoyo','meitetsu-nagoya','nagoya','chiryu'], vehicle:'myusky' },
 ];
+
+// ── 車両メダル用データ（実在の名前・実在に近い配色でデザイン） ──
+const VEHICLE_TYPES = {
+  'jr-local':        { name:'ふつう',       plate:'#6B9B4F', band:null,      bandOpacity:0,    border:'#8a8a8a', textFill:'#ffffff', textStroke:'#6B9B4F', express:false, fontSize:14 },
+  'meitetsu-local':   { name:'名鉄ふつう',   plate:'#C62030', band:null,      bandOpacity:0,    border:'#8a8a8a', textFill:'#ffffff', textStroke:'#C62030', express:false, fontSize:12 },
+  'jr-rapid':        { name:'かいそく',     plate:'#ffffff', band:'#E8720C', bandOpacity:0.85, border:'#b0b0b0', textFill:'#7a3d00', textStroke:'#ffffff', express:true,  fontSize:13 },
+  'subway':          { name:'N1000形',     plate:'#FFD400', band:'#2b2b2b', bandOpacity:0.22, border:'#555555', textFill:'#2b2b2b', textStroke:'#FFD400', express:false, fontSize:11 },
+  'meitetsu-express': { name:'名鉄特急',    plate:'#E4002B', band:'#ffffff', bandOpacity:0.2,  border:'#b0b0b0', textFill:'#ffffff', textStroke:'#E4002B', express:true,  fontSize:12 },
+  'kintetsu-express': { name:'ひのとり',    plate:'#6B1E3C', band:'#000000', bandOpacity:0.25, border:'#c9a227', textFill:'#f3d98a', textStroke:'#6B1E3C', express:true,  fontSize:13 },
+  'jr-ltdexpress':   { name:'しなの',       plate:'#ffffff', band:'#2E7D32', bandOpacity:0.85, border:'#e8720c', textFill:'#1b4d1e', textStroke:'#ffffff', express:true,  fontSize:14 },
+  shinkansen:        { name:'のぞみ',       plate:'#003DA5', band:'#ffffff', bandOpacity:0.15, border:'#d4a017', textFill:'#ffffff', textStroke:'#003DA5', express:true,  fontSize:14 },
+  'jr-shinkaisoku':  { name:'新快速',       plate:'#ffffff', band:'#FF6B00', bandOpacity:0.9,  border:'#999999', textFill:'#7a3d00', textStroke:'#ffffff', express:false, fontSize:13 },
+  myusky:            { name:'ミュースカイ', plate:'#F39800', band:'#ffffff', bandOpacity:0.3,  border:'#b8860b', textFill:'#ffffff', textStroke:'#F39800', express:true,  fontSize:12 },
+};
+
+// ── 車両メダルSVG（先頭車のオーバル型ネームプレート風） ──
+function buildVehicleMedalSVG(vehicleId, size=32) {
+  const v = VEHICLE_TYPES[vehicleId];
+  if (!v) return '';
+  const h = Math.round(size * 0.625);
+  const band = v.band ? `<path d="M2,30 L62,10 L62,30 Z" fill="${v.band}" opacity="${v.bandOpacity}"/>` : '';
+  const speedLines = v.express ? `
+    <line x1="4" y1="14" x2="12" y2="12" stroke="${v.band && v.band !== v.plate ? v.band : '#ffffff'}" stroke-width="1.5" opacity="0.7"/>
+    <line x1="4" y1="20" x2="14" y2="18" stroke="${v.band && v.band !== v.plate ? v.band : '#ffffff'}" stroke-width="1.5" opacity="0.5"/>` : '';
+  return `<svg viewBox="0 0 64 40" width="${size}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="32" cy="20" rx="31" ry="19" fill="${v.border}"/>
+    <ellipse cx="32" cy="20" rx="29" ry="17" fill="${v.plate}"/>
+    ${band}
+    ${speedLines}
+    <text x="32" y="25" font-size="${v.fontSize}" font-weight="900" fill="${v.textFill}" text-anchor="middle" font-family="sans-serif" letter-spacing="0.5" stroke="${v.textStroke}" stroke-width="3" style="paint-order:stroke">${esc(v.name)}</text>
+  </svg>`;
+}
 
 function allTokaiStationIds() {
   const s = new Set();
@@ -105,7 +169,18 @@ function buildMedalSVG(line, size=32) {
 // ── 路線図（デフォルメ）レンダリング ──
 function renderRouteMap() {
   const visited = new Set(S.trainProgress.visitedStations);
-  let svg = `<svg viewBox="0 0 900 700" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" style="background:#1a1410;border-radius:12px">`;
+  // 実寸を大きめに描画して、指でスクロールしながら見られるようにする（viewBoxは900x700のまま）
+  let svg = `<svg viewBox="0 0 900 700" width="1440" height="1120" xmlns="http://www.w3.org/2000/svg" style="display:block;border-radius:12px">`;
+  // 海（背景）
+  svg += `<rect x="0" y="0" width="900" height="700" fill="#6ec6e8"/>`;
+  // 陸地（ざっくりした地形。楕円を重ねて東海地方っぽいシルエットに）
+  LAND_SHAPE.forEach(e => {
+    svg += `<ellipse cx="${e.cx}" cy="${e.cy}" rx="${e.rx}" ry="${e.ry}" fill="#f5ecd4"/>`;
+  });
+  // 山アイコン（雰囲気だけ）
+  MOUNTAIN_ICONS.forEach(([mx, my]) => {
+    svg += `<path d="M${mx-14},${my+10} L${mx},${my-12} L${mx+14},${my+10} Z" fill="#8fbf7a" opacity="0.8"/>`;
+  });
   TOKAI_LINES.forEach(line => {
     let d = '';
     line.stations.forEach((st, i) => {
@@ -114,7 +189,7 @@ function renderRouteMap() {
       d += (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1] + ' ';
     });
     const conquered = line.stations.every(st => visited.has(st.id));
-    svg += `<path d="${d}" stroke="${line.color}" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="${conquered ? 1 : 0.55}"/>`;
+    svg += `<path d="${d}" stroke="${line.color}" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="${conquered ? 1 : 0.6}"/>`;
   });
   const drawn = new Set();
   TOKAI_LINES.forEach(line => {
@@ -124,8 +199,10 @@ function renderRouteMap() {
       const p = STATION_POS[st.id];
       if (!p) return;
       const isVisited = visited.has(st.id);
-      svg += `<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="${isVisited ? '#ffd700' : '#3a3028'}" stroke="${isVisited ? '#fff' : '#5a4f42'}" stroke-width="2"/>`;
-      svg += `<text x="${p[0]}" y="${p[1]-12}" font-size="13" fill="${isVisited ? '#fff' : '#8a7d6c'}" text-anchor="middle" font-family="sans-serif">${esc(st.name)}</text>`;
+      const reading = STATION_READING[st.id] || '';
+      svg += `<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="${isVisited ? '#ffd700' : '#fffdf5'}" stroke="${isVisited ? '#c08000' : '#a89878'}" stroke-width="2"/>`;
+      svg += `<text x="${p[0]}" y="${p[1]-23}" font-size="9" fill="${isVisited ? '#a06a00' : '#8a7d6c'}" text-anchor="middle" font-family="sans-serif">${esc(reading)}</text>`;
+      svg += `<text x="${p[0]}" y="${p[1]-12}" font-size="13" font-weight="${isVisited ? '700' : '400'}" fill="${isVisited ? '#7a4a00' : '#6b5d4a'}" text-anchor="middle" font-family="sans-serif">${esc(st.name)}</text>`;
     });
   });
   svg += '</svg>';
@@ -149,17 +226,23 @@ function renderLineLegend() {
 // ── コースショップ ──
 function renderCourseShop() {
   const riddenLines = new Set(S.trainProgress.riddenLines);
+  const riddenVehicles = new Set(S.trainProgress.riddenVehicles || []);
   return TRAIN_COURSES.map(course => {
     const newLines = course.lines.filter(id => !riddenLines.has(id));
+    const newVehicle = course.vehicle && !riddenVehicles.has(course.vehicle);
     const affordable = S.coins >= course.price;
-    return `<div style="background:#fdf8f0;border:1px solid #e0d5c0;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-size:.85rem;font-weight:700;color:#2d2040">${esc(course.name)}</div>
-        <div style="font-size:.82rem;font-weight:800;color:#c08000">¥${course.price.toLocaleString()}</div>
+    const v = course.vehicle ? VEHICLE_TYPES[course.vehicle] : null;
+    return `<div style="background:#fdf8f0;border:1px solid #e0d5c0;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start">
+      ${v ? `<div style="flex-shrink:0;margin-top:2px">${buildVehicleMedalSVG(course.vehicle, 44)}</div>` : ''}
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:.85rem;font-weight:700;color:#2d2040">${esc(course.name)}</div>
+          <div style="font-size:.82rem;font-weight:800;color:#c08000">¥${course.price.toLocaleString()}</div>
+        </div>
+        <div style="font-size:.72rem;color:#7a6a9a;line-height:1.5">${esc(course.desc)}</div>
+        <div style="font-size:.68rem;color:#c06010">${v ? `🚃 ${esc(v.name)}` : ''}${newLines.length > 0 ? ` ・ 🎖路線メダル${newLines.length}個` : ''}${newVehicle ? ' ・ 🎖車両メダル' : ''}</div>
+        <button onclick="buyTrainCourse('${course.id}')" ${affordable ? '' : 'disabled'} style="margin-top:2px;padding:7px;border-radius:99px;border:none;background:${affordable ? '#7c5cbf' : '#ccc'};color:#fff;font-size:.78rem;font-weight:700;font-family:inherit;cursor:${affordable ? 'pointer' : 'not-allowed'}">${affordable ? 'このコースで旅に出るぼ' : 'お金が足りないぼ'}</button>
       </div>
-      <div style="font-size:.72rem;color:#7a6a9a;line-height:1.5">${esc(course.desc)}</div>
-      ${newLines.length > 0 ? `<div style="font-size:.68rem;color:#c06010">🎖 はじめての路線メダル ${newLines.length}個もらえるぼ！</div>` : ''}
-      <button onclick="buyTrainCourse('${course.id}')" ${affordable ? '' : 'disabled'} style="margin-top:4px;padding:7px;border-radius:99px;border:none;background:${affordable ? '#7c5cbf' : '#ccc'};color:#fff;font-size:.78rem;font-weight:700;font-family:inherit;cursor:${affordable ? 'pointer' : 'not-allowed'}">${affordable ? 'このコースで旅に出るぼ' : 'お金が足りないぼ'}</button>
     </div>`;
   }).join('');
 }
@@ -206,12 +289,22 @@ async function buyTrainCourse(courseId) {
     }
   });
   S.trainProgress.riddenLines = [...ridden];
+
+  const riddenVehicles = new Set(S.trainProgress.riddenVehicles || []);
+  const newVehicle = course.vehicle && !riddenVehicles.has(course.vehicle) ? course.vehicle : null;
+  if (newVehicle) riddenVehicles.add(newVehicle);
+  S.trainProgress.riddenVehicles = [...riddenVehicles];
+
   S.trainProgress.toursDone.unshift({ courseId: course.id, name: course.name, price: course.price, at: Date.now() });
   S.trainProgress.toursDone = S.trainProgress.toursDone.slice(0, 50);
 
   newMedals.forEach(line => {
     S.collection.unshift({ type: 'medal', name: `${line.name} 記念メダル`, lineId: line.id, lineColor: line.color, obtainedAt: Date.now() });
   });
+  if (newVehicle) {
+    const v = VEHICLE_TYPES[newVehicle];
+    S.collection.unshift({ type: 'vehicle-medal', name: `${v.name} メダル`, vehicleId: newVehicle, obtainedAt: Date.now() });
+  }
 
   await saveShared({ coins: S.coins, collection: JSON.stringify(S.collection) });
   await saveState(); // trainProgressを含む通常フィールドの保存
@@ -220,9 +313,11 @@ async function buyTrainCourse(courseId) {
   renderTrainJourney();
   updateCollectionBadge();
 
-  if (newMedals.length > 0) {
-    showToast(`✨「${course.name}」で旅に出て、記念メダルを${newMedals.length}個ゲットしたぼ！`);
-    typeText(`ぎゃぼー！${newMedals.map(l => l.name).join('・')}に乗ったぼ！`);
+  const gotCount = newMedals.length + (newVehicle ? 1 : 0);
+  if (gotCount > 0) {
+    showToast(`✨「${course.name}」で旅に出て、メダルを${gotCount}個ゲットしたぼ！`);
+    const names = [...newMedals.map(l => l.name), ...(newVehicle ? [VEHICLE_TYPES[newVehicle].name] : [])];
+    typeText(`ぎゃぼー！${names.join('・')}に乗ったぼ！`);
   } else {
     showToast(`✨「${course.name}」の旅から帰ってきたぼ！`);
     typeText('楽しい旅だったぼ！また行くぼ！');
