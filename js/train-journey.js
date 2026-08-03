@@ -49,18 +49,20 @@ const TOKAI_LINES = [
 ];
 
 // 路線図（デフォルメ）用の駅座標。viewBox 0 0 900 700
+// 実際の緯度経度（OpenStreetMapデータ）を投影して算出した座標をベースに、
+// 名古屋駅まわりの密集駅だけ視認性のために少しずらしてある
 const STATION_POS = {
-  gifu:[60,380], 'owari-ichinomiya':[150,380], nagoya:[260,380], atsuta:[340,420],
-  obu:[420,460], kariya:[500,460], anjo:[580,460], okazaki:[660,460], gamagori:[740,460], toyohashi:[820,420],
-  chikusa:[300,320], kozoji:[360,260], tajimi:[420,210], toki:[480,170], ena:[550,130], nakatsugawa:[620,90],
-  hatta:[180,460], kuwana:[140,520], yokkaichi:[130,580], kameyama:[180,640],
-  'kintetsu-nagoya':[230,395], tsu:[110,610],
-  higashiura:[420,530], handa:[420,600], taketoyo:[420,660],
-  'mikawa-anjo':[660,380], 'gifu-hashima':[130,320],
-  'higashi-okazaki':[660,530], chiryu:[540,600], 'jingu-mae':[340,480], 'meitetsu-nagoya':[195,420], 'meitetsu-gifu':[70,440],
-  sanage:[540,460], 'toyota-shi':[540,530], hekinan:[460,650],
-  akaike:[440,510],
-  takabata:[150,430], fushimi:[300,400], sakae:[365,390], fujigaoka:[370,330],
+  gifu:[287,129], 'owari-ichinomiya':[317,210], nagoya:[380,310], atsuta:[401,341],
+  obu:[439,432], kariya:[474,446], anjo:[532,469], okazaki:[584,495], gamagori:[635,573], toyohashi:[751,618],
+  chikusa:[430,300], kozoji:[500,239], tajimi:[557,185], toki:[603,166], ena:[770,94], nakatsugawa:[840,60],
+  hatta:[345,345], kuwana:[233,388], yokkaichi:[193,467], kameyama:[60,552],
+  'kintetsu-nagoya':[340,285], tsu:[104,640],
+  higashiura:[445,477], handa:[416,519], taketoyo:[409,550],
+  'mikawa-anjo':[513,461], 'gifu-hashima':[235,200],
+  'higashi-okazaki':[592,475], chiryu:[497,434], 'jingu-mae':[420,360], 'meitetsu-nagoya':[320,330], 'meitetsu-gifu':[310,140],
+  sanage:[600,346], 'toyota-shi':[583,373], hekinan:[457,534],
+  akaike:[481,347],
+  takabata:[359,375], fushimi:[415,285], sakae:[460,295], fujigaoka:[483,301],
 };
 
 // 駅名のふりがな
@@ -80,16 +82,11 @@ const STATION_READING = {
 
 // 路線図の背景（ざっくりした地形）。楕円を重ねて東海地方っぽいシルエットにする
 const LAND_SHAPE = [
-  { cx:450, cy:250, rx:440, ry:230 }, // 北側（中央線方面）
-  { cx:450, cy:420, rx:440, ry:110 }, // メインの東西帯（東海道本線）
-  { cx:250, cy:460, rx:190, ry:100 }, // 名古屋南（地下鉄クラスター）
-  { cx:430, cy:480, rx:75,  ry:55  }, // 知多半島のつけね
-  { cx:420, cy:590, rx:60,  ry:100 }, // 知多半島
-  { cx:415, cy:665, rx:45,  ry:45  }, // 知多半島の先端
-  { cx:150, cy:460, rx:110, ry:60  }, // 三重方面のつけね
-  { cx:130, cy:550, rx:130, ry:90  }, // 三重方面
-  { cx:150, cy:630, rx:110, ry:60  }, // 三重方面の南
-  { cx:580, cy:580, rx:150, ry:110 }, // 三河・豊田方面の内陸
+  { cx:540, cy:260, rx:460, ry:300 }, // 北〜中央（中央線方面を含む広め）
+  { cx:560, cy:480, rx:350, ry:190 }, // 東海道本線・三河/豊田の東西帯
+  { cx:200, cy:420, rx:230, ry:280 }, // 岐阜・三重方面
+  { cx:430, cy:495, rx:90,  ry:100 }, // 知多半島のつけね
+  { cx:410, cy:555, rx:55,  ry:55  }, // 知多半島の先端
 ];
 
 // 山アイコン（雰囲気だけの飾り）
