@@ -292,7 +292,7 @@ async function checkNPCAutoSale() {
   const lastCheck = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
   const hoursSince = (now - lastCheck) / (1000 * 60 * 60);
 
-  // まだ4時間経っていなければスキップ
+  // まだ1時間経っていなければスキップ
   if (hoursSince < CHECK_INTERVAL_HOURS) {
     const remain = Math.ceil(CHECK_INTERVAL_HOURS - hoursSince);
     console.log(`次のNPC巡回まであと約${remain}時間`);
@@ -303,52 +303,63 @@ async function checkNPCAutoSale() {
 
   localStorage.setItem(LAST_CHECK_KEY, String(now));
 
-  const available = allShopItems.filter(i => !i.sold);
-  if (available.length === 0) { await checkNewSales(); return; }
+  // ショップを開いていない間の時間分、まとめて巡回を「早送り」する（最大6回分）
+  const rounds = Math.max(1, Math.min(6, Math.floor(hoursSince / CHECK_INTERVAL_HOURS)));
+  const allPurchases = [];
+  let anyMissVisits = [];
 
-  // アクティブなNPCだけに絞る
-  const activeNPCs = getActiveNPCs();
-  if (activeNPCs.length === 0) { await checkNewSales(); return; }
+  for (let round = 0; round < rounds; round++) {
+    const available = allShopItems.filter(i => !i.sold);
+    if (available.length === 0) break;
 
-  const purchases = [];
-  const missVisits = []; // 来たけど買わなかった訪問者
+    const activeNPCs = getActiveNPCs();
+    if (activeNPCs.length === 0) continue;
 
-  // アクティブNPCのうち何人かがフラッと来店する（買うかどうかは別）
-  const visitors = activeNPCs
-    .filter(() => Math.random() < 0.55) // 55%の確率で来店
-    .slice(0, 4); // 最大4人
+    const purchases = [];
+    const missVisits = []; // 来たけど買わなかった訪問者
 
-  for (const npc of visitors) {
-    // この人が欲しそうなアイテムが出品されているか
-    const wantedItems = available.filter(item => {
-      const catMatch = npc.likes.some(l => item.cat && item.cat.includes(l)) || npc.likes.includes(item.cat);
-      const rarityMatch = npc.likeRarity.includes(item.rarity);
-      const priceOk = item.price >= npc.budget[0] && item.price <= npc.budget[1];
-      return catMatch && rarityMatch && priceOk;
-    });
+    // アクティブNPCのうち何人かがフラッと来店する（買うかどうかは別）
+    const visitors = activeNPCs
+      .filter(() => Math.random() < 0.75) // 75%の確率で来店
+      .slice(0, 6); // 最大6人
 
-    if (wantedItems.length > 0) {
-      // 欲しいものがある → 購入確率チェック
-      const item = wantedItems[Math.floor(Math.random() * wantedItems.length)];
-      const checkProbs = [0.60, 0.45, 0.32, 0.18, 0.08];
-      const prob = checkProbs[item.rarity] ?? 0.20;
-      if (Math.random() < prob) {
-        purchases.push({ item, npc });
+    for (const npc of visitors) {
+      // この人が欲しそうなアイテムが出品されているか
+      const wantedItems = available.filter(item => {
+        const catMatch = npc.likes.some(l => item.cat && item.cat.includes(l)) || npc.likes.includes(item.cat);
+        const rarityMatch = npc.likeRarity.includes(item.rarity);
+        const priceOk = item.price >= npc.budget[0] && item.price <= npc.budget[1];
+        return catMatch && rarityMatch && priceOk;
+      });
+
+      if (wantedItems.length > 0) {
+        // 欲しいものがある → 購入確率チェック
+        const item = wantedItems[Math.floor(Math.random() * wantedItems.length)];
+        const checkProbs = [0.75, 0.62, 0.48, 0.32, 0.18];
+        const prob = checkProbs[item.rarity] ?? 0.35;
+        if (Math.random() < prob && !allPurchases.some(p => p.item.shopId === item.shopId)) {
+          purchases.push({ item, npc });
+          available.splice(available.indexOf(item), 1); // 同じ回の中で二重に売れないように
+        } else {
+          // 来たけど買わなかった（気に入らなかった）
+          missVisits.push({ npc, reason: 'almost', item });
+        }
       } else {
-        // 来たけど買わなかった（気に入らなかった）
-        missVisits.push({ npc, reason: 'almost', item });
+        // 欲しいものがない → 手ぶらで帰る
+        missVisits.push({ npc, reason: 'nothing' });
       }
-    } else {
-      // 欲しいものがない → 手ぶらで帰る
-      missVisits.push({ npc, reason: 'nothing' });
     }
+
+    allPurchases.push(...purchases);
+    anyMissVisits = missVisits; // 来客ログは直近の巡回分だけ表示
+    if (allPurchases.length >= 8) break; // 一度に出す通知が多すぎないように上限
   }
 
   // 来客ログを表示（購入後に表示）
-  setTimeout(() => showMissVisits(missVisits), purchases.length > 0 ? 8000 : 1000);
+  setTimeout(() => showMissVisits(anyMissVisits), allPurchases.length > 0 ? 8000 : 1000);
 
-  // 最大2件処理
-  for (const { item, npc } of purchases.slice(0, 3)) {
+  // 最大8件処理
+  for (const { item, npc } of allPurchases.slice(0, 8)) {
     const ownerDoc = item.owner === 'まなぼ' ? 'shared' : 'mini-shared';
     try {
       const d = await fsGet(`manabo/${ownerDoc}`);
@@ -440,13 +451,22 @@ async function cleanupSoldItems() {
       if (!d) continue;
       // shopItemsから売れたものを削除
       let shopItems = JSON.parse(d.shopItems || '[]');
+      const removedItems = shopItems.filter(i => shopIds.includes(i.shopId));
       shopItems = shopItems.filter(i => !shopIds.includes(i.shopId));
       // inventoryからも削除（isWorkなど出品元アイテム）
       let inventory = JSON.parse(d.inventory || '[]');
       inventory = inventory.filter(i => !shopIds.includes(i.shopId));
+      // 削除する前に販売記録として保存（直近200件まで）
+      let saleHistory = JSON.parse(d.saleHistory || '[]');
+      const newEntries = removedItems.map(i => ({
+        name: i.name, price: i.price, rarity: i.rarity,
+        buyerName: i.buyerName, buyerEmoji: i.buyerEmoji, soldAt: i.soldAt,
+      }));
+      saleHistory = [...newEntries, ...saleHistory].slice(0, 200);
       await fsPatch(`manabo/${doc}`, {
         shopItems: JSON.stringify(shopItems),
         inventory: JSON.stringify(inventory),
+        saleHistory: JSON.stringify(saleHistory),
       });
       // 画面からも削除
       shopIds.forEach(id => {
