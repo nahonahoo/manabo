@@ -242,8 +242,18 @@ function renderCollection() {
   el.innerHTML = (!S.collection || S.collection.length === 0)
     ? '<div style="color:#b0a0cc;font-size:.82rem;text-align:center;padding:1rem">まだなにもかってないよ</div>'
     : S.collection.map(item => {
-        const ri = RARITY_INFO[item.rarity];
         const date = item.obtainedAt ? new Date(item.obtainedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : '';
+        if (item.type === 'medal') {
+          const line = TOKAI_LINES.find(l => l.id === item.lineId);
+          return `<div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
+            <div>${line ? buildMedalSVG(line, 32) : '🎖'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.82rem;font-weight:600;color:#2d2040">${esc(item.name)}</div>
+              <div style="font-size:.72rem;color:#c08040">🚃 でんしゃのたびきねん ・ ${date}</div>
+            </div>
+          </div>`;
+        }
+        const ri = RARITY_INFO[item.rarity];
         return `<div style="background:#fff8e0;border:1px solid #f0d080;border-radius:10px;padding:9px 11px;display:flex;gap:8px;align-items:center">
           <div style="font-size:1.4rem">${ri.emoji}</div>
           <div style="flex:1;min-width:0">
