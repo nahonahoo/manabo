@@ -53,14 +53,14 @@ const STATION_POS = {
   gifu:[60,380], 'owari-ichinomiya':[150,380], nagoya:[260,380], atsuta:[340,420],
   obu:[420,460], kariya:[500,460], anjo:[580,460], okazaki:[660,460], gamagori:[740,460], toyohashi:[820,420],
   chikusa:[300,320], kozoji:[360,260], tajimi:[420,210], toki:[480,170], ena:[550,130], nakatsugawa:[620,90],
-  hatta:[230,490], kuwana:[260,540], yokkaichi:[300,590], kameyama:[360,630],
-  'kintetsu-nagoya':[130,410], tsu:[220,620],
+  hatta:[180,460], kuwana:[140,520], yokkaichi:[130,580], kameyama:[180,640],
+  'kintetsu-nagoya':[230,395], tsu:[110,610],
   higashiura:[420,530], handa:[420,600], taketoyo:[420,660],
   'mikawa-anjo':[660,380], 'gifu-hashima':[130,320],
-  'higashi-okazaki':[660,530], chiryu:[540,530], 'jingu-mae':[340,480], 'meitetsu-nagoya':[195,420], 'meitetsu-gifu':[70,440],
-  sanage:[540,650], 'toyota-shi':[540,590], hekinan:[650,620],
-  akaike:[610,600],
-  takabata:[180,590], fushimi:[190,500], sakae:[210,450], fujigaoka:[190,330],
+  'higashi-okazaki':[660,530], chiryu:[540,600], 'jingu-mae':[340,480], 'meitetsu-nagoya':[195,420], 'meitetsu-gifu':[70,440],
+  sanage:[540,460], 'toyota-shi':[540,530], hekinan:[460,650],
+  akaike:[440,510],
+  takabata:[150,430], fushimi:[300,400], sakae:[365,390], fujigaoka:[370,330],
 };
 
 // 駅名のふりがな
@@ -86,9 +86,9 @@ const LAND_SHAPE = [
   { cx:430, cy:480, rx:75,  ry:55  }, // 知多半島のつけね
   { cx:420, cy:590, rx:60,  ry:100 }, // 知多半島
   { cx:415, cy:665, rx:45,  ry:45  }, // 知多半島の先端
-  { cx:210, cy:470, rx:100, ry:60  }, // 三重方面のつけね
-  { cx:260, cy:560, rx:120, ry:80  }, // 三重方面
-  { cx:290, cy:635, rx:100, ry:55  }, // 三重方面の南
+  { cx:150, cy:460, rx:110, ry:60  }, // 三重方面のつけね
+  { cx:130, cy:550, rx:130, ry:90  }, // 三重方面
+  { cx:150, cy:630, rx:110, ry:60  }, // 三重方面の南
   { cx:580, cy:580, rx:150, ry:110 }, // 三河・豊田方面の内陸
 ];
 
@@ -264,6 +264,15 @@ function renderTrainJourney() {
 function openTrainJourney() {
   document.getElementById('train-journey-modal').style.display = 'flex';
   renderTrainJourney();
+  // 最初は名古屋あたりが見えるようにスクロール位置を合わせる
+  const mapEl = document.getElementById('train-map');
+  if (mapEl) {
+    const scale = 1440 / 900;
+    const nx = STATION_POS.nagoya[0] * scale;
+    const ny = STATION_POS.nagoya[1] * scale;
+    mapEl.scrollLeft = Math.max(0, nx - mapEl.clientWidth / 2);
+    mapEl.scrollTop = Math.max(0, ny - mapEl.clientHeight / 2);
+  }
 }
 function closeTrainJourney() {
   document.getElementById('train-journey-modal').style.display = 'none';

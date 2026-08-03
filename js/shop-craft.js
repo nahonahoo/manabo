@@ -291,7 +291,8 @@ async function buyFromPartner(shopId) {
 function updateCollectionBadge() {
   const badge = document.getElementById('collection-badge');
   if (!badge) return;
-  const n = S.collection ? S.collection.length : 0;
+  const total = S.collection ? S.collection.length : 0;
+  const n = Math.max(0, total - (S.collectionSeenCount || 0));
   badge.style.display = n > 0 ? 'flex' : 'none';
   badge.textContent = n > 99 ? '99+' : n;
 }
@@ -336,6 +337,11 @@ function renderCollection() {
 function openCollection() {
   document.getElementById('collection-modal').style.display = 'flex';
   renderCollection();
+  if (S.collectionSeenCount !== S.collection.length) {
+    S.collectionSeenCount = S.collection.length;
+    updateCollectionBadge();
+    saveShared({ collectionSeenCount: S.collectionSeenCount }).catch(e => console.warn('save error', e));
+  }
 }
 function closeCollection() {
   document.getElementById('collection-modal').style.display = 'none';

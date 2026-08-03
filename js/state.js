@@ -25,6 +25,7 @@ const S = {
   craftDate: '',           // 発明回数リセット日
   saleHistory: [],         // 売れたアイテムの記録（新しい順）
   collection: [],          // パートナーから買ったコレクション（再出品不可・新しい順）
+  collectionSeenCount: 0,  // コレクションを最後に開いたときの件数（未読バッジ用）
   letters: [],             // 受け取ったお手紙（最新10件）
   trainProgress: { visitedStations: [], riddenLines: [], riddenVehicles: [], toursDone: [] }, // でんしゃのたび進捗（自分専用・外部から書き換えられない）
   omiyage: [],             // おみやげ知識（招待セッション由来）
@@ -177,6 +178,7 @@ async function loadState() {
       S.craftDate  = d.craftDate  || '';
       S.saleHistory = d.saleHistory ? JSON.parse(d.saleHistory) : [];
       S.collection = d.collection ? JSON.parse(d.collection) : [];
+      S.collectionSeenCount = d.collectionSeenCount || 0;
       S.letters = d.letters ? JSON.parse(d.letters) : [];
       S.trainProgress = d.trainProgress ? JSON.parse(d.trainProgress) : { visitedStations: [], riddenLines: [], riddenVehicles: [], toursDone: [] };
       if (d.appearance) {
