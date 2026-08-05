@@ -92,30 +92,30 @@ const LAND_SHAPE = [
 // 山アイコン（雰囲気だけの飾り）
 const MOUNTAIN_ICONS = [ [560,220], [630,170], [700,250], [130,250] ];
 
-// ── 旅行コース商品（¥3,000〜¥30,000。今は東海地方のみなのでこの範囲に収める）。路線をどう辿るかはお任せ設計、重複あり ──
-// 高い金額のコースほど、道中で乗り換える路線・車両の種類が多くなるようにして、値段に見合うだけメダルがもらえるようにしてある
+// ── 旅行コース商品（¥3,000〜¥26,000。今は東海地方のみなのでこの範囲に収める）。路線をどう辿るかはお任せ設計、重複あり ──
+// 高い金額のコースほど、道中で乗り換える路線・車両の種類が多くなるようにして、値段に見合うだけメダルがもらえるようにしてある。
+// 「全部まとめてもらえる総仕上げコース」は作らない（それをやると値段の安いコースを買う意味がなくなってしまうため）
 const TRAIN_COURSES = [
-  { id:'c1', name:'となりまちさんぽ', price:3000, desc:'大府から半田までのんびり各駅停車の旅。',
-    lines:['taketoyo'], stationIds:['obu','higashiura','handa'], vehicles:['jr-local'] },
+  { id:'c1', name:'となりまちさんぽ', price:3000, desc:'大府から半田を通って武豊まで、のんびり各駅停車の旅。',
+    lines:['taketoyo'], stationIds:['obu','higashiura','handa','taketoyo'], vehicles:['jr-local'] },
   { id:'c2', name:'豊田市内ぶらり旅', price:5000, desc:'猿投・豊田市・赤池をまわるミニトリップ。',
     lines:['mikawa','toyota-line'], stationIds:['sanage','toyota-shi','akaike'], vehicles:['meitetsu-local'] },
   { id:'c3', name:'岡崎までおでかけ', price:7000, desc:'刈谷・安城を通って岡崎まで東海道本線でおでかけ。',
     lines:['tokaido'], stationIds:['kariya','anjo','okazaki'], vehicles:['jr-rapid'] },
   { id:'c4', name:'名古屋地下たんけん', price:9000, desc:'東山線に乗って名古屋の地下をたんけん。',
     lines:['higashiyama'], stationIds:['takabata','fushimi','sakae','nagoya','fujigaoka'], vehicles:['subway'] },
-  { id:'c5', name:'三河湾ぐるりツアー', price:13000, desc:'豊橋から知立を通って碧南まで、名鉄の特急とふつうを乗り継いでぐるり。',
+  { id:'c5', name:'ミュースカイでひとっとび', price:11000, desc:'名鉄名古屋から名鉄岐阜まで、特別料金がかかる特急ミュースカイでひとっとび。',
+    lines:['meitetsu-nagoya'], stationIds:['meitetsu-gifu'], vehicles:['myusky'] },
+  { id:'c6', name:'三河湾ぐるりツアー', price:13000, desc:'豊橋から知立を通って碧南まで、名鉄の特急とふつうを乗り継いでぐるり。',
     lines:['meitetsu-nagoya','mikawa'], stationIds:['toyohashi','higashi-okazaki','chiryu','jingu-mae','meitetsu-nagoya','hekinan'], vehicles:['meitetsu-express','meitetsu-local'] },
-  { id:'c6', name:'桑名・四日市の旅', price:16000, desc:'関西本線のふつうと近鉄特急を乗り継いでまわる三重県の旅。',
+  { id:'c7', name:'桑名・四日市の旅', price:16000, desc:'関西本線のふつうと近鉄特急を乗り継いでまわる三重県の旅。',
     lines:['kansai','kintetsu-nagoya'], stationIds:['hatta','kuwana','yokkaichi','kameyama','kintetsu-nagoya','tsu'], vehicles:['jr-local','kintetsu-express'] },
-  { id:'c7', name:'中央線秘境ツアー', price:19000, desc:'千種から中津川まで、ふつうとしなのを乗り継いで山あいの中央本線を制覇。',
+  { id:'c8', name:'中央線秘境ツアー', price:19000, desc:'千種から中津川まで、ふつうとしなのを乗り継いで山あいの中央本線を制覇。',
     lines:['chuo'], stationIds:['chikusa','kozoji','tajimi','toki','ena','nakatsugawa'], vehicles:['jr-local','jr-ltdexpress'] },
-  { id:'c8', name:'新幹線ぴゅーん', price:22000, desc:'のぞみ・ひかりで豊橋から岐阜羽島まで一気にワープ。',
+  { id:'c9', name:'新幹線ぴゅーん', price:22000, desc:'のぞみ・ひかりで豊橋から岐阜羽島まで一気にワープ。',
     lines:['shinkansen'], stationIds:['toyohashi','mikawa-anjo','gifu-hashima'], vehicles:['shinkansen'] },
-  { id:'c9', name:'東海道本線コンプリート', price:26000, desc:'豊橋から岐阜まで、ふつう・かいそく・新快速を乗り継いで東海道本線を端から端まで完全制覇。',
+  { id:'c10', name:'東海道本線コンプリート', price:26000, desc:'豊橋から岐阜まで、ふつう・かいそく・新快速を乗り継いで東海道本線を端から端まで完全制覇。',
     lines:['tokaido'], stationIds:['toyohashi','gamagori','okazaki','anjo','kariya','obu','atsuta','nagoya','owari-ichinomiya','gifu'], vehicles:['jr-local','jr-rapid','jr-shinkaisoku'] },
-  { id:'c10', name:'東海オールスター大旅行', price:30000, desc:'名鉄岐阜・武豊など、残った駅を全部まわる東海制覇の総仕上げ。これまで乗り残した車両のメダルも全部もらえるスペシャルコース。',
-    lines:['meitetsu-nagoya','taketoyo'], stationIds:['meitetsu-gifu','taketoyo','meitetsu-nagoya','nagoya','chiryu'],
-    vehicles:['jr-local','meitetsu-local','jr-rapid','subway','meitetsu-express','kintetsu-express','jr-ltdexpress','shinkansen','jr-shinkaisoku','myusky'] },
 ];
 
 // ── 車両メダル用データ（実在の名前・実在に近い配色でデザイン） ──
