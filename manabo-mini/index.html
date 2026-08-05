@@ -125,7 +125,7 @@
     </radialGradient>
   </defs>
   <!-- 影 -->
-  <ellipse cx="80" cy="125" rx="28" ry="5" fill="#e8a060" opacity="0.25"/>
+  <ellipse id="shadow-e" cx="80" cy="125" rx="28" ry="5" fill="#e8a060" opacity="0.25"/>
   <!-- 腕 -->
   <ellipse id="arm-l" cx="36" cy="95" rx="9" ry="6" fill="#ffcc90" transform="rotate(-30,36,95)"/>
   <ellipse id="arm-r" cx="124" cy="95" rx="9" ry="6" fill="#ffcc90" transform="rotate(30,124,95)"/>
@@ -273,8 +273,6 @@
           <div class="diary-grid">
             <button class="diary-btn" onclick="generateDiary('日記')">📔 にっき</button>
             <button class="diary-btn" onclick="generateDiary('小説')">📖 おはなし</button>
-            <button class="diary-btn" onclick="generateDiary('発表')">🎤 はっぴょう</button>
-            <button class="diary-btn" onclick="generateDiary('詩')">🌸 うた</button>
             <button class="diary-btn" onclick="generateJointDiary('合同日記')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📔 まなぼといっしょに</button>
             <button class="diary-btn" onclick="generateJointDiary('合同小説')" style="border-color:#7c5cbf;color:#7c5cbf">🟣📖 おはなしいっしょに</button>
             <button class="diary-btn" onclick="generateDiary('ひらめき')" style="border-color:#f0b800;color:#c08000;grid-column:span 2;font-weight:700">✨ ひらめきにっき</button>
@@ -642,9 +640,9 @@
 <script src="js/data.js?v=2"></script>
 <script src="js/state.js?v=10"></script>
 <script src="js/core-ui.js?v=4"></script>
-<script src="js/pet-animation.js?v=4"></script>
+<script src="js/pet-animation.js?v=5"></script>
 <script src="js/chat.js?v=2"></script>
-<script src="js/diary-knowledge.js?v=3"></script>
+<script src="js/diary-knowledge.js?v=4"></script>
 <script src="js/customize.js?v=2"></script>
 <script src="js/social.js?v=3"></script>
 <script src="js/train-journey.js?v=2"></script>

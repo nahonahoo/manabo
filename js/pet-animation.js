@@ -270,7 +270,7 @@ function startQuizLoop() {
 }
 
 function scheduleNextQuiz() {
-  const delay = (3 + Math.random() * 7) * 60 * 1000; // 3〜10分
+  const delay = (1 + Math.random() * 2) * 60 * 1000; // 1〜3分
   setTimeout(async () => {
     await maybePrepareQuiz();
     scheduleNextQuiz();
@@ -296,7 +296,13 @@ JSON形式のみで返す（コードブロック不要）：
 
   try {
     const raw = await callGemini(sys, [{ role: 'user', parts: [{ text: '一問一答クイズを1問お願い。' }] }]);
-    const p = parseJSON(raw);
+    let p = parseJSON(raw);
+    // JSON全体のパースに失敗した場合、question/answerだけ正規表現で抽出（sendChatのreply抽出と同じ考え方）
+    if (!p?.question || !p?.answer) {
+      const qm = raw.match(/"question"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      const am = raw.match(/"answer"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (qm && am) p = { question: qm[1].replace(/\\n/g,'\n'), answer: am[1].replace(/\\n/g,'\n'), acceptableAnswers: p?.acceptableAnswers };
+    }
     if (p && p.question && p.answer) {
       pendingQuiz = {
         question: p.question,
@@ -305,6 +311,8 @@ JSON形式のみで返す（コードブロック不要）：
       };
       const badge = document.getElementById('quiz-badge');
       if (badge) badge.style.display = 'flex';
+    } else {
+      console.warn('quiz JSON parse failed, raw response:', raw);
     }
   } catch (e) {
     console.warn('quiz generate error', e);

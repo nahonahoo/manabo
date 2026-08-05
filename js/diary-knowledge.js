@@ -19,8 +19,6 @@ async function generateDiary(type) {
   const prompts = {
     日記: `ペット「まなぼ」として今日の日記を書く。かわいい/アホ/突然鋭い/雑/カオスが混在する読めないキャラで。覚えた知識をズレた形・意外なつながりで混ぜる。300字以内。語尾は${gobiStr()}をランダムに。敬語禁止。`,
     小説: `ペット「まなぼ」として短編小説を書く。かわいい/鋭い/雑/カオスが混在するキャラで語る。知識を的外れかつ時々妙に鋭く登場させる。400字以内。語尾は${gobiStr()}をランダムに。敬語禁止。`,
-    発表: `ペット「まなぼ」として授業発表。「えーっと」「ぎゃぼ待って」「わぼ…」などを挟みながら、一生懸命だがカオスな発表を300字以内で。語尾は${gobiStr()}をランダムに。敬語禁止。`,
-    詩: `ペット「まなぼ」として詩を書く。かわいい/鋭い/カオスが混在する詩。知識が意外な比喩になる。200字以内。語尾は${gobiStr()}をランダムに。敬語禁止。`,
   };
 
   const sys = (prompts[type] || prompts['日記']) + `\n知識:\n${topics}\nプレーンテキストのみ（JSON・装飾なし）。`;
@@ -34,16 +32,17 @@ async function generateDiary(type) {
     meta.style.display = '';
     bounce();
     showHappy(true);
-    const lines = { 日記: 'かいた！みて！（どや顔）', 小説: 'しょうせつかいた…すごい？', 発表: 'はっぴょうするよ！（ドキドキ）', 詩: 'うた…つくったよ…' };
+    const lines = { 日記: 'かいた！みて！（どや顔）', 小説: 'しょうせつかいた…すごい？' };
     typeText(lines[type] || 'かいたよ！');
 
-    // 作品をS._lastWorkに一時保存（出品用）
+    // 作品をS._lastWorkに一時保存（値段づけ用）
     S._lastWork = { content, type, topics };
 
-    // 出品ボタンを表示（日記・小説・詩のみ）
-    if (['日記','小説','詩'].includes(type)) {
+    // 値段づけボタンを表示（日記・小説のみ）
+    if (['日記','小説'].includes(type)) {
       const btn = document.getElementById('diary-sell-btn');
-      btn.textContent = `📖 この${type}をショップに出品する`;
+      btn.disabled = false;
+      btn.textContent = `📖 この${type}に値段をつける`;
       btn.style.display = '';
     }
   } catch (e) {
@@ -113,7 +112,7 @@ JSONのみ返す（コードブロック不要）:
     S._lastWork = null;
   } catch(e) {
     btn.disabled = false;
-    btn.textContent = `📖 この${work.type}をショップに出品する`;
+    btn.textContent = `📖 この${work.type}に値段をつける`;
     showToast('評価できなかったぼ…もう一回押してみてほしいぼ');
   }
 }
