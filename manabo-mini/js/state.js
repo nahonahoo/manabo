@@ -26,7 +26,7 @@ const S = {
   saleHistory: [],         // 売れたアイテムの記録（新しい順）
   collection: [],          // パートナーから買ったコレクション（再出品不可・新しい順）
   letters: [],             // 受け取ったお手紙（最新10件）
-  trainProgress: { visitedStations: [], riddenLines: [], toursDone: [] }, // でんしゃのたび進捗（自分専用・外部から書き換えられない）
+  trainProgress: { visitedStations: [], riddenLines: [], riddenVehicles: [], toursDone: [] }, // でんしゃのたび進捗（自分専用・外部から書き換えられない）
   omiyage: [],             // おみやげ知識
   kouryuLv: 0,             // 交流レベル
   partnerName: 'まなぼ',   // 相手の名前
@@ -174,7 +174,8 @@ async function loadState() {
       S.saleHistory = d.saleHistory ? JSON.parse(d.saleHistory) : [];
       S.collection = d.collection ? JSON.parse(d.collection) : [];
       S.letters = d.letters ? JSON.parse(d.letters) : [];
-      S.trainProgress = d.trainProgress ? JSON.parse(d.trainProgress) : { visitedStations: [], riddenLines: [], toursDone: [] };
+      S.trainProgress = d.trainProgress ? JSON.parse(d.trainProgress) : { visitedStations: [], riddenLines: [], riddenVehicles: [], toursDone: [] };
+      if (!S.trainProgress.riddenVehicles) S.trainProgress.riddenVehicles = []; // 既存データに車両フィールドがない場合の互換対応
       if (d.appearance) {
         try { Object.assign(S.appearance, JSON.parse(d.appearance)); } catch(_) {}
       }
