@@ -203,7 +203,121 @@ function renderRouteMap() {
     });
   });
   svg += '</svg>';
-  return svg;
+  return `<div id="train-map-inner" style="position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform">${svg}</div>`;
+}
+
+// ── 路線図：ピンチズーム & ドラッグパン ──
+const mapZoomState = { scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 3 };
+const mapPointers = new Map();
+let mapPanStart = null;   // { x, y, tx, ty }（1本指ドラッグ用）
+let mapPinch = null;      // { dist, scale, midX, midY, tx, ty }（2本指ピンチ用）
+
+function clampMapTransform() {
+  const mapEl = document.getElementById('train-map');
+  if (!mapEl) return;
+  const cw = mapEl.clientWidth, ch = mapEl.clientHeight;
+  const iw = 1440 * mapZoomState.scale, ih = 1120 * mapZoomState.scale;
+  const minTx = Math.min(0, cw - iw), minTy = Math.min(0, ch - ih);
+  mapZoomState.tx = Math.max(minTx, Math.min(0, mapZoomState.tx));
+  mapZoomState.ty = Math.max(minTy, Math.min(0, mapZoomState.ty));
+}
+
+function applyMapTransform() {
+  const inner = document.getElementById('train-map-inner');
+  if (!inner) return;
+  clampMapTransform();
+  inner.style.transform = `translate(${mapZoomState.tx}px, ${mapZoomState.ty}px) scale(${mapZoomState.scale})`;
+}
+
+function zoomMapAt(px, py, newScale) {
+  newScale = Math.max(mapZoomState.minScale, Math.min(mapZoomState.maxScale, newScale));
+  const ratio = newScale / mapZoomState.scale;
+  mapZoomState.tx = px - (px - mapZoomState.tx) * ratio;
+  mapZoomState.ty = py - (py - mapZoomState.ty) * ratio;
+  mapZoomState.scale = newScale;
+  applyMapTransform();
+}
+
+function initMapPanZoom() {
+  const mapEl = document.getElementById('train-map');
+  if (!mapEl || mapEl.dataset.pzInit) return;
+  mapEl.dataset.pzInit = '1';
+
+  mapEl.addEventListener('pointerdown', e => {
+    try { mapEl.setPointerCapture(e.pointerId); } catch (err) { /* 2本目のタッチなどでは失敗することがあるが追跡には影響しない */ }
+    mapPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mapPointers.size === 1) {
+      mapPanStart = { x: e.clientX, y: e.clientY, tx: mapZoomState.tx, ty: mapZoomState.ty };
+      mapPinch = null;
+    } else if (mapPointers.size === 2) {
+      const pts = [...mapPointers.values()];
+      const rect = mapEl.getBoundingClientRect();
+      mapPinch = {
+        dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
+        scale: mapZoomState.scale,
+        midX: (pts[0].x + pts[1].x) / 2 - rect.left,
+        midY: (pts[0].y + pts[1].y) / 2 - rect.top,
+        tx: mapZoomState.tx, ty: mapZoomState.ty,
+      };
+      mapPanStart = null;
+    }
+  });
+
+  mapEl.addEventListener('pointermove', e => {
+    if (!mapPointers.has(e.pointerId)) return;
+    mapPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mapPointers.size === 1 && mapPanStart) {
+      mapZoomState.tx = mapPanStart.tx + (e.clientX - mapPanStart.x);
+      mapZoomState.ty = mapPanStart.ty + (e.clientY - mapPanStart.y);
+      applyMapTransform();
+    } else if (mapPointers.size === 2 && mapPinch) {
+      const pts = [...mapPointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const newScale = Math.max(mapZoomState.minScale, Math.min(mapZoomState.maxScale, mapPinch.scale * (dist / mapPinch.dist)));
+      const ratio = newScale / mapPinch.scale;
+      mapZoomState.tx = mapPinch.midX - (mapPinch.midX - mapPinch.tx) * ratio;
+      mapZoomState.ty = mapPinch.midY - (mapPinch.midY - mapPinch.ty) * ratio;
+      mapZoomState.scale = newScale;
+      applyMapTransform();
+    }
+  });
+
+  const endPointer = e => {
+    mapPointers.delete(e.pointerId);
+    if (mapPointers.size === 1) {
+      const [p] = [...mapPointers.values()];
+      mapPanStart = { x: p.x, y: p.y, tx: mapZoomState.tx, ty: mapZoomState.ty };
+      mapPinch = null;
+    } else if (mapPointers.size === 0) {
+      mapPanStart = null;
+      mapPinch = null;
+    }
+  };
+  mapEl.addEventListener('pointerup', endPointer);
+  mapEl.addEventListener('pointercancel', endPointer);
+  mapEl.addEventListener('pointerleave', endPointer);
+
+  // ダブルタップ／ダブルクリックでズームイン⇔リセット
+  let lastTapAt = 0, lastTapPos = null;
+  mapEl.addEventListener('pointerup', e => {
+    const now = Date.now();
+    const nearLast = lastTapPos && Math.hypot(e.clientX - lastTapPos.x, e.clientY - lastTapPos.y) < 30;
+    if (now - lastTapAt < 300 && nearLast) {
+      const rect = mapEl.getBoundingClientRect();
+      zoomMapAt(e.clientX - rect.left, e.clientY - rect.top, mapZoomState.scale > 1.4 ? 1 : 2);
+      lastTapAt = 0;
+    } else {
+      lastTapAt = now;
+      lastTapPos = { x: e.clientX, y: e.clientY };
+    }
+  });
+
+  // マウスホイールでもズーム（PC確認用）
+  mapEl.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = mapEl.getBoundingClientRect();
+    zoomMapAt(e.clientX - rect.left, e.clientY - rect.top, mapZoomState.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+  }, { passive: false });
 }
 
 function renderLineLegend() {
@@ -250,6 +364,7 @@ function renderTrainJourney() {
   const pct = Math.round((got / total) * 100);
   const mapEl = document.getElementById('train-map');
   if (mapEl) mapEl.innerHTML = renderRouteMap();
+  applyMapTransform();
   const legendEl = document.getElementById('train-legend');
   if (legendEl) legendEl.innerHTML = renderLineLegend();
   const progEl = document.getElementById('train-progress-text');
@@ -260,15 +375,18 @@ function renderTrainJourney() {
 
 function openTrainJourney() {
   document.getElementById('train-journey-modal').style.display = 'flex';
+  initMapPanZoom();
   renderTrainJourney();
-  // 最初は名古屋あたりが見えるようにスクロール位置を合わせる
+  // 最初は名古屋あたりが見えるように拡大率・位置を合わせる
   const mapEl = document.getElementById('train-map');
   if (mapEl) {
     const scale = 1440 / 900;
     const nx = STATION_POS.nagoya[0] * scale;
     const ny = STATION_POS.nagoya[1] * scale;
-    mapEl.scrollLeft = Math.max(0, nx - mapEl.clientWidth / 2);
-    mapEl.scrollTop = Math.max(0, ny - mapEl.clientHeight / 2);
+    mapZoomState.scale = 1;
+    mapZoomState.tx = mapEl.clientWidth / 2 - nx;
+    mapZoomState.ty = mapEl.clientHeight / 2 - ny;
+    applyMapTransform();
   }
 }
 function closeTrainJourney() {

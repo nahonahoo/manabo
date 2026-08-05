@@ -695,8 +695,8 @@
       <button onclick="closeTrainJourney()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
     </div>
     <div id="train-progress-text" style="font-size:.8rem;font-weight:700;color:#7c5cbf;text-align:center;background:#ede0ff;border-radius:99px;padding:6px">東海制覇：0/0駅（0%）</div>
-    <div id="train-map" style="overflow:auto;height:340px;flex-shrink:0;border-radius:12px;-webkit-overflow-scrolling:touch"></div>
-    <div style="font-size:.68rem;color:#a090c0;text-align:center">↔ 指でスクロールして見られるよ</div>
+    <div id="train-map" style="overflow:hidden;position:relative;height:340px;flex-shrink:0;border-radius:12px;touch-action:none;background:#6ec6e8"></div>
+    <div style="font-size:.68rem;color:#a090c0;text-align:center">↔ 指でスクロール・ピンチで拡大縮小できるよ（ダブルタップでもズーム）</div>
     <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">路線せいはじょうきょう</div>
     <div id="train-legend" style="display:flex;flex-direction:column;gap:0"></div>
     <div style="font-size:11px;font-weight:600;color:#b0a0cc;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">りょこうコース</div>
@@ -745,7 +745,7 @@
 <script src="js/diary-knowledge.js?v=3"></script>
 <script src="js/customize.js?v=2"></script>
 <script src="js/social.js?v=3"></script>
-<script src="js/train-journey.js?v=7"></script>
+<script src="js/train-journey.js?v=8"></script>
 <script src="js/shop-craft.js?v=9"></script>
 </body>
 </html>
