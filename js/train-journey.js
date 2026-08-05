@@ -92,28 +92,30 @@ const LAND_SHAPE = [
 // 山アイコン（雰囲気だけの飾り）
 const MOUNTAIN_ICONS = [ [560,220], [630,170], [700,250], [130,250] ];
 
-// ── 旅行コース商品（¥3,000〜¥100,000）。路線をどう辿るかはお任せ設計、重複あり ──
+// ── 旅行コース商品（¥3,000〜¥30,000。今は東海地方のみなのでこの範囲に収める）。路線をどう辿るかはお任せ設計、重複あり ──
+// 高い金額のコースほど、道中で乗り換える路線・車両の種類が多くなるようにして、値段に見合うだけメダルがもらえるようにしてある
 const TRAIN_COURSES = [
   { id:'c1', name:'となりまちさんぽ', price:3000, desc:'大府から半田までのんびり各駅停車の旅。',
-    lines:['taketoyo'], stationIds:['obu','higashiura','handa'], vehicle:'jr-local' },
+    lines:['taketoyo'], stationIds:['obu','higashiura','handa'], vehicles:['jr-local'] },
   { id:'c2', name:'豊田市内ぶらり旅', price:5000, desc:'猿投・豊田市・赤池をまわるミニトリップ。',
-    lines:['mikawa','toyota-line'], stationIds:['sanage','toyota-shi','akaike'], vehicle:'meitetsu-local' },
-  { id:'c3', name:'岡崎までおでかけ', price:8000, desc:'刈谷・安城を通って岡崎まで東海道本線でおでかけ。',
-    lines:['tokaido'], stationIds:['kariya','anjo','okazaki'], vehicle:'jr-rapid' },
-  { id:'c4', name:'名古屋地下たんけん', price:12000, desc:'東山線に乗って名古屋の地下をたんけん。',
-    lines:['higashiyama'], stationIds:['takabata','fushimi','sakae','nagoya','fujigaoka'], vehicle:'subway' },
-  { id:'c5', name:'三河湾ぐるりツアー', price:18000, desc:'豊橋から知立を通って碧南まで、名鉄でぐるり。',
-    lines:['meitetsu-nagoya','mikawa'], stationIds:['toyohashi','higashi-okazaki','chiryu','jingu-mae','meitetsu-nagoya','hekinan'], vehicle:'meitetsu-express' },
-  { id:'c6', name:'桑名・四日市の旅', price:25000, desc:'関西本線と近鉄でまわる三重県の旅。',
-    lines:['kansai','kintetsu-nagoya'], stationIds:['hatta','kuwana','yokkaichi','kameyama','kintetsu-nagoya','tsu'], vehicle:'kintetsu-express' },
-  { id:'c7', name:'中央線秘境ツアー', price:35000, desc:'千種から中津川まで、山あいの中央本線を制覇。',
-    lines:['chuo'], stationIds:['chikusa','kozoji','tajimi','toki','ena','nakatsugawa'], vehicle:'jr-ltdexpress' },
-  { id:'c8', name:'新幹線ぴゅーん', price:50000, desc:'のぞみ・ひかりで豊橋から岐阜羽島まで一気にワープ。',
-    lines:['shinkansen'], stationIds:['toyohashi','mikawa-anjo','gifu-hashima'], vehicle:'shinkansen' },
-  { id:'c9', name:'東海道本線コンプリート', price:70000, desc:'豊橋から岐阜まで、東海道本線を端から端まで完全制覇。',
-    lines:['tokaido'], stationIds:['toyohashi','gamagori','okazaki','anjo','kariya','obu','atsuta','nagoya','owari-ichinomiya','gifu'], vehicle:'jr-shinkaisoku' },
-  { id:'c10', name:'東海オールスター大旅行', price:100000, desc:'名鉄岐阜・武豊など、残った駅を全部まわる東海制覇の総仕上げ。',
-    lines:['meitetsu-nagoya','taketoyo'], stationIds:['meitetsu-gifu','taketoyo','meitetsu-nagoya','nagoya','chiryu'], vehicle:'myusky' },
+    lines:['mikawa','toyota-line'], stationIds:['sanage','toyota-shi','akaike'], vehicles:['meitetsu-local'] },
+  { id:'c3', name:'岡崎までおでかけ', price:7000, desc:'刈谷・安城を通って岡崎まで東海道本線でおでかけ。',
+    lines:['tokaido'], stationIds:['kariya','anjo','okazaki'], vehicles:['jr-rapid'] },
+  { id:'c4', name:'名古屋地下たんけん', price:9000, desc:'東山線に乗って名古屋の地下をたんけん。',
+    lines:['higashiyama'], stationIds:['takabata','fushimi','sakae','nagoya','fujigaoka'], vehicles:['subway'] },
+  { id:'c5', name:'三河湾ぐるりツアー', price:13000, desc:'豊橋から知立を通って碧南まで、名鉄の特急とふつうを乗り継いでぐるり。',
+    lines:['meitetsu-nagoya','mikawa'], stationIds:['toyohashi','higashi-okazaki','chiryu','jingu-mae','meitetsu-nagoya','hekinan'], vehicles:['meitetsu-express','meitetsu-local'] },
+  { id:'c6', name:'桑名・四日市の旅', price:16000, desc:'関西本線のふつうと近鉄特急を乗り継いでまわる三重県の旅。',
+    lines:['kansai','kintetsu-nagoya'], stationIds:['hatta','kuwana','yokkaichi','kameyama','kintetsu-nagoya','tsu'], vehicles:['jr-local','kintetsu-express'] },
+  { id:'c7', name:'中央線秘境ツアー', price:19000, desc:'千種から中津川まで、ふつうとしなのを乗り継いで山あいの中央本線を制覇。',
+    lines:['chuo'], stationIds:['chikusa','kozoji','tajimi','toki','ena','nakatsugawa'], vehicles:['jr-local','jr-ltdexpress'] },
+  { id:'c8', name:'新幹線ぴゅーん', price:22000, desc:'のぞみ・ひかりで豊橋から岐阜羽島まで一気にワープ。',
+    lines:['shinkansen'], stationIds:['toyohashi','mikawa-anjo','gifu-hashima'], vehicles:['shinkansen'] },
+  { id:'c9', name:'東海道本線コンプリート', price:26000, desc:'豊橋から岐阜まで、ふつう・かいそく・新快速を乗り継いで東海道本線を端から端まで完全制覇。',
+    lines:['tokaido'], stationIds:['toyohashi','gamagori','okazaki','anjo','kariya','obu','atsuta','nagoya','owari-ichinomiya','gifu'], vehicles:['jr-local','jr-rapid','jr-shinkaisoku'] },
+  { id:'c10', name:'東海オールスター大旅行', price:30000, desc:'名鉄岐阜・武豊など、残った駅を全部まわる東海制覇の総仕上げ。これまで乗り残した車両のメダルも全部もらえるスペシャルコース。',
+    lines:['meitetsu-nagoya','taketoyo'], stationIds:['meitetsu-gifu','taketoyo','meitetsu-nagoya','nagoya','chiryu'],
+    vehicles:['jr-local','meitetsu-local','jr-rapid','subway','meitetsu-express','kintetsu-express','jr-ltdexpress','shinkansen','jr-shinkaisoku','myusky'] },
 ];
 
 // ── 車両メダル用データ（実在の名前・実在に近い配色でデザイン） ──
@@ -340,20 +342,19 @@ function renderCourseShop() {
   const riddenVehicles = new Set(S.trainProgress.riddenVehicles || []);
   return TRAIN_COURSES.map(course => {
     const newLines = course.lines.filter(id => !riddenLines.has(id));
-    const newVehicle = course.vehicle && !riddenVehicles.has(course.vehicle);
+    const newVehicles = course.vehicles.filter(id => !riddenVehicles.has(id));
     const affordable = S.coins >= course.price;
-    const v = course.vehicle ? VEHICLE_TYPES[course.vehicle] : null;
-    return `<div style="background:#fdf8f0;border:1px solid #e0d5c0;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start">
-      ${v ? `<div style="flex-shrink:0;margin-top:2px">${buildVehicleMedalSVG(course.vehicle, 44)}</div>` : ''}
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:.85rem;font-weight:700;color:#2d2040">${esc(course.name)}</div>
-          <div style="font-size:.82rem;font-weight:800;color:#c08000">¥${course.price.toLocaleString()}</div>
-        </div>
-        <div style="font-size:.72rem;color:#7a6a9a;line-height:1.5">${esc(course.desc)}</div>
-        <div style="font-size:.68rem;color:#c06010">${v ? `🚃 ${esc(v.name)}` : ''}${newLines.length > 0 ? ` ・ 🎖路線メダル${newLines.length}個` : ''}${newVehicle ? ' ・ 🎖車両メダル' : ''}</div>
-        <button onclick="buyTrainCourse('${course.id}')" ${affordable ? '' : 'disabled'} style="margin-top:2px;padding:7px;border-radius:99px;border:none;background:${affordable ? '#7c5cbf' : '#ccc'};color:#fff;font-size:.78rem;font-weight:700;font-family:inherit;cursor:${affordable ? 'pointer' : 'not-allowed'}">${affordable ? 'このコースで旅に出るぼ' : 'お金が足りないぼ'}</button>
+    const vehicleNames = course.vehicles.map(id => VEHICLE_TYPES[id].name).join('・');
+    const medalIcons = course.vehicles.map(id => buildVehicleMedalSVG(id, 32)).join('');
+    return `<div style="background:#fdf8f0;border:1px solid #e0d5c0;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:.85rem;font-weight:700;color:#2d2040">${esc(course.name)}</div>
+        <div style="font-size:.82rem;font-weight:800;color:#c08000">¥${course.price.toLocaleString()}</div>
       </div>
+      <div style="font-size:.72rem;color:#7a6a9a;line-height:1.5">${esc(course.desc)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${medalIcons}</div>
+      <div style="font-size:.68rem;color:#c06010">🚃 ${esc(vehicleNames)}${newLines.length > 0 ? ` ・ 🎖路線メダル${newLines.length}個` : ''}${newVehicles.length > 0 ? ` ・ 🎖車両メダル${newVehicles.length}個` : ''}</div>
+      <button onclick="buyTrainCourse('${course.id}')" ${affordable ? '' : 'disabled'} style="margin-top:2px;padding:7px;border-radius:99px;border:none;background:${affordable ? '#7c5cbf' : '#ccc'};color:#fff;font-size:.78rem;font-weight:700;font-family:inherit;cursor:${affordable ? 'pointer' : 'not-allowed'}">${affordable ? 'このコースで旅に出るぼ' : 'お金が足りないぼ'}</button>
     </div>`;
   }).join('');
 }
@@ -420,11 +421,13 @@ function playTrainAnimation(course) {
     const pop = document.getElementById('travel-clack-pop');
     if (!overlay || !wrap) { resolve(); return; }
 
-    const v = course.vehicle ? VEHICLE_TYPES[course.vehicle] : null;
+    // 出発演出は代表として1本目の車両の見た目を使う（複数車両でも文言では全部紹介する）
+    const v = course.vehicles && course.vehicles.length ? VEHICLE_TYPES[course.vehicles[0]] : null;
     const color = v ? v.plate : '#6B9B4F';
     if (body) body.setAttribute('fill', color);
     if (nose) nose.setAttribute('fill', color);
-    if (label) label.textContent = `${v ? v.name : '電車'}にのって「${course.name}」へしゅっぱつ！`;
+    const vehicleNames = course.vehicles && course.vehicles.length ? course.vehicles.map(id => VEHICLE_TYPES[id].name).join('・') : '電車';
+    if (label) label.textContent = `${vehicleNames}にのって「${course.name}」へしゅっぱつ！`;
 
     // アニメーションを最初から再生し直すため、いったんクラス/アニメーションをリセット
     [wrap, document.getElementById('travel-train'), ties, clouds].forEach(el => {
@@ -473,8 +476,8 @@ async function finishTrainCourse(course) {
   S.trainProgress.riddenLines = [...ridden];
 
   const riddenVehicles = new Set(S.trainProgress.riddenVehicles || []);
-  const newVehicle = course.vehicle && !riddenVehicles.has(course.vehicle) ? course.vehicle : null;
-  if (newVehicle) riddenVehicles.add(newVehicle);
+  const newVehicles = (course.vehicles || []).filter(id => !riddenVehicles.has(id));
+  newVehicles.forEach(id => riddenVehicles.add(id));
   S.trainProgress.riddenVehicles = [...riddenVehicles];
 
   S.trainProgress.toursDone.unshift({ courseId: course.id, name: course.name, price: course.price, at: Date.now() });
@@ -483,10 +486,10 @@ async function finishTrainCourse(course) {
   newMedals.forEach(line => {
     S.collection.unshift({ type: 'medal', name: `${line.name} 記念メダル`, lineId: line.id, lineColor: line.color, obtainedAt: Date.now() });
   });
-  if (newVehicle) {
-    const v = VEHICLE_TYPES[newVehicle];
-    S.collection.unshift({ type: 'vehicle-medal', name: `${v.name} メダル`, vehicleId: newVehicle, obtainedAt: Date.now() });
-  }
+  newVehicles.forEach(vehicleId => {
+    const v = VEHICLE_TYPES[vehicleId];
+    S.collection.unshift({ type: 'vehicle-medal', name: `${v.name} メダル`, vehicleId, obtainedAt: Date.now() });
+  });
 
   await saveShared({ coins: S.coins, collection: JSON.stringify(S.collection) });
   await saveState(); // trainProgressを含む通常フィールドの保存
@@ -495,10 +498,10 @@ async function finishTrainCourse(course) {
   renderTrainJourney();
   updateCollectionBadge();
 
-  const gotCount = newMedals.length + (newVehicle ? 1 : 0);
+  const gotCount = newMedals.length + newVehicles.length;
   if (gotCount > 0) {
     showToast(`✨「${course.name}」で旅に出て、メダルを${gotCount}個ゲットしたぼ！`);
-    const names = [...newMedals.map(l => l.name), ...(newVehicle ? [VEHICLE_TYPES[newVehicle].name] : [])];
+    const names = [...newMedals.map(l => l.name), ...newVehicles.map(id => VEHICLE_TYPES[id].name)];
     typeText(`ぎゃぼー！${names.join('・')}に乗ったぼ！`);
   } else {
     showToast(`✨「${course.name}」の旅から帰ってきたぼ！`);
