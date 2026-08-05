@@ -256,3 +256,139 @@ D: 複数の知識を意外な形で結びつける
     showToast(IDLE[Math.floor(Math.random() * IDLE.length)]);
   }
 }
+
+// ── ？クイズ（正解すると¥50もらえる一問一答） ──
+// 独り言ループと同じペース（3〜10分に1回）で？マークが出現し、タップすると出題される。
+// 出題範囲は「小学校〜中学3年生1学期（夏休み前）まで」に固定し、まだ習っていない範囲は出さない。
+let pendingQuiz = null; // { question, answer, acceptableAnswers }
+let quizFetchInFlight = false;
+
+function startQuizLoop() {
+  const today = new Date().toDateString();
+  if (S.quizDate !== today) { S.quizCount = 0; S.quizDate = today; }
+  scheduleNextQuiz();
+}
+
+function scheduleNextQuiz() {
+  const delay = (3 + Math.random() * 7) * 60 * 1000; // 3〜10分
+  setTimeout(async () => {
+    await maybePrepareQuiz();
+    scheduleNextQuiz();
+  }, delay);
+}
+
+async function maybePrepareQuiz() {
+  const today = new Date().toDateString();
+  if (S.quizDate !== today) { S.quizCount = 0; S.quizDate = today; }
+  if (S.quizCount >= 20) return;
+  if (pendingQuiz || quizFetchInFlight) return; // 前回のクイズが答えられるまで次は用意しない
+
+  quizFetchInFlight = true;
+  const sys = `ペット「${S.petName}」として、飼い主に一問一答クイズを1問出す。${S.persona ? `【性格メモ：${S.persona}】` : ''}
+【キャラ】かわいい・アホ・鋭い・雑・カオスが混在する読めないキャラ。
+【語尾】${gobiStr()} を混ぜる。敬語禁止。
+【出題範囲】小学校１年生〜中学３年生の1学期（夏休み前）までに学校で習う内容から出題する。中学３年生の２学期以降に習う範囲は絶対に出題しないこと。
+【教科】数学・理科・社会・国語・英語のどれか1つをランダムに選ぶ。
+【問題の性質】一問一答形式。用語・年号・公式・単語など、短い言葉ではっきり答えが決まる問題にする。長い説明が要る問題は避ける。
+【難易度】学年相応・頑張れば思い出せるレベル。難しすぎない。
+JSON形式のみで返す（コードブロック不要）：
+{"question":"（まなぼの語尾で聞く問題文。30字以内）","answer":"（模範解答。できるだけ短く）","acceptableAnswers":["表記ゆれ・言い方違いを含む正解バリエーションを3〜5個（ひらがな/カタカナ/漢字、送り仮名の有無なども含める）"]}`;
+
+  try {
+    const raw = await callGemini(sys, [{ role: 'user', parts: [{ text: '一問一答クイズを1問お願い。' }] }]);
+    const p = parseJSON(raw);
+    if (p && p.question && p.answer) {
+      pendingQuiz = {
+        question: p.question,
+        answer: p.answer,
+        acceptableAnswers: Array.isArray(p.acceptableAnswers) && p.acceptableAnswers.length ? p.acceptableAnswers : [p.answer],
+      };
+      const badge = document.getElementById('quiz-badge');
+      if (badge) badge.style.display = 'flex';
+    }
+  } catch (e) {
+    console.warn('quiz generate error', e);
+  }
+  quizFetchInFlight = false;
+}
+
+function normalizeQuizAnswer(s) {
+  return String(s || '')
+    .trim()
+    .replace(/[\s　]+/g, '')
+    .replace(/[。、！？．，.,!?]/g, '')
+    .toLowerCase();
+}
+
+function checkQuizAnswer(userInput, acceptableAnswers) {
+  const norm = normalizeQuizAnswer(userInput);
+  if (!norm) return false;
+  return (acceptableAnswers || []).some(a => {
+    const na = normalizeQuizAnswer(a);
+    if (!na) return false;
+    if (norm === na) return true;
+    if (na.length >= 2 && norm.length >= 2) return norm.includes(na) || na.includes(norm);
+    return false;
+  });
+}
+
+function openQuizModal() {
+  if (!pendingQuiz) return;
+  document.getElementById('quiz-question-text').textContent = pendingQuiz.question;
+  const input = document.getElementById('quiz-answer-input');
+  input.value = '';
+  input.style.display = '';
+  document.getElementById('quiz-btn-row').style.display = '';
+  document.getElementById('quiz-result-area').style.display = 'none';
+  document.getElementById('quiz-modal').style.display = 'flex';
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeQuizModal() {
+  document.getElementById('quiz-modal').style.display = 'none';
+  // 閉じても pendingQuiz は消さない（答えないまま閉じても？マークは残り、後で答えられる）
+}
+
+// この問題はパス：ペナルティなしでこの問題だけ手放す。次の出現タイミングで新しい問題に変わる
+function passQuiz() {
+  pendingQuiz = null;
+  const badge = document.getElementById('quiz-badge');
+  if (badge) badge.style.display = 'none';
+  closeQuizModal();
+}
+
+async function submitQuizAnswer() {
+  if (!pendingQuiz) return;
+  const input = document.getElementById('quiz-answer-input');
+  const userAnswer = input.value.trim();
+  if (!userAnswer) return;
+  const quiz = pendingQuiz;
+  const correct = checkQuizAnswer(userAnswer, quiz.acceptableAnswers);
+
+  input.style.display = 'none';
+  document.getElementById('quiz-btn-row').style.display = 'none';
+  const resultArea = document.getElementById('quiz-result-area');
+  resultArea.style.display = '';
+
+  const badge = document.getElementById('quiz-badge');
+  if (badge) badge.style.display = 'none';
+  pendingQuiz = null;
+
+  if (correct) {
+    S.coins += 50;
+    S.quizCount++;
+    await saveShared({ coins: S.coins });
+    await saveState();
+    gainXP(1);
+    resultArea.innerHTML = `<div style="color:#2a7a50;font-weight:700">✨ せいかい！+¥50 ゲットしたぼ！</div>`;
+    showToast('✨ クイズせいかい！+¥50');
+    typeText('やった！正解だぼ！+¥50もらったぼ！');
+    doExcited();
+  } else {
+    S.quizCount++;
+    await saveState();
+    resultArea.innerHTML = `<div style="color:#7a6a9a">おしい…！こたえは「${esc(quiz.answer)}」だったぼ。またチャレンジしてほしいぼ！</div>`;
+    typeText(`おしい！こたえは「${quiz.answer}」だったぼ〜`);
+    bounce();
+  }
+}

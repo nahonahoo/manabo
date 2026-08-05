@@ -111,6 +111,7 @@
         <span id="collection-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ff4d6d;color:#fff;font-size:10px;font-weight:700;border-radius:99px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;align-items:center;justify-content:center">0</span>
       </button>
       <button id="train-journey-btn" onclick="openTrainJourney()" title="でんしゃのたび" style="position:absolute;left:16px;bottom:6px;width:40px;height:40px;border-radius:50%;border:2px solid #1D2088;background:#e8ecff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);padding:0">🚃</button>
+      <button id="quiz-badge" onclick="openQuizModal()" title="クイズにこたえる" style="display:none;position:absolute;right:8px;top:0;width:36px;height:36px;border-radius:50%;border:2px solid #7c5cbf;background:#fff0f8;font-size:1.1rem;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);padding:0;z-index:5">❓</button>
       <svg id="pet-svg" viewBox="0 0 160 130" width="130" height="105" onclick="petTap()" style="overflow:visible">
         <defs>
           <radialGradient id="mg" cx="50%" cy="42%" r="55%">
@@ -733,14 +734,33 @@
   <div id="travel-label" style="position:absolute;bottom:10%;left:0;right:0;text-align:center;font-size:.85rem;font-weight:700;color:#3a2e4a;padding:0 2rem"></div>
 </div>
 
+<!-- クイズモーダル -->
+<div id="quiz-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem 1.25rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-size:1rem;font-weight:700;color:#2d2040">❓ まなぼからのクイズ</h3>
+      <button onclick="closeQuizModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#7a6a9a">✕</button>
+    </div>
+    <div id="quiz-question-text" style="font-size:.95rem;font-weight:600;color:#2d2040;background:#ede0ff;border-radius:12px;padding:14px;line-height:1.6"></div>
+    <input id="quiz-answer-input" type="text" placeholder="こたえをにゅうりょく" autocomplete="off"
+           onkeydown="if(event.key==='Enter')submitQuizAnswer()"
+           style="padding:10px 12px;border-radius:10px;border:1px solid #d8c8f0;font-size:.9rem;font-family:inherit">
+    <div id="quiz-btn-row" style="display:flex;gap:8px">
+      <button id="quiz-pass-btn" onclick="passQuiz()" style="flex:1;padding:10px;border-radius:99px;border:1px solid #d8c8f0;background:#fff;color:#7a6a9a;font-size:.8rem;font-weight:700;font-family:inherit;cursor:pointer">パス</button>
+      <button id="quiz-submit-btn" onclick="submitQuizAnswer()" style="flex:2;padding:10px;border-radius:99px;border:none;background:#7c5cbf;color:#fff;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer">こたえる</button>
+    </div>
+    <div id="quiz-result-area" style="display:none;font-size:.85rem;line-height:1.6;text-align:center;padding:8px"></div>
+  </div>
+</div>
+
 <!-- Firebase SDK (compat版 = グローバル変数firebase.xxxで使える) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <!-- app.js を機能ごとに分割（挙動は変更なし・読み込み順に依存関係なし） -->
 <script src="js/data.js?v=2"></script>
-<script src="js/state.js?v=10"></script>
-<script src="js/core-ui.js?v=3"></script>
-<script src="js/pet-animation.js?v=2"></script>
+<script src="js/state.js?v=11"></script>
+<script src="js/core-ui.js?v=4"></script>
+<script src="js/pet-animation.js?v=4"></script>
 <script src="js/chat.js?v=2"></script>
 <script src="js/diary-knowledge.js?v=3"></script>
 <script src="js/customize.js?v=2"></script>

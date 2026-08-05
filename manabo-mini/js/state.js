@@ -13,6 +13,8 @@ const S = {
   isThinking: false,
   monoCount: 0,
   monoDate: '',
+  quizCount: 0,            // 今日の？クイズにこたえた回数
+  quizDate: '',            // クイズ回数リセット日
   filterSubject: 'すべて',
   editingId: null,
   gobi: [...DEFAULT_GOBI], // カスタマイズ可能な語尾リスト
@@ -104,6 +106,8 @@ async function saveState() {
       xpMax:     S.xpMax,
       monoCount: S.monoCount,
       monoDate:  S.monoDate,
+      quizCount: S.quizCount,
+      quizDate:  S.quizDate,
       knowledge: JSON.stringify(S.knowledge),
       gobi:      JSON.stringify(S.gobi),
       omiyage:   JSON.stringify(S.omiyage),
@@ -150,6 +154,8 @@ async function loadState() {
       S.xpMax     = d.xpMax     || 5;
       S.monoCount = d.monoCount || 0;
       S.monoDate  = d.monoDate  || '';
+      S.quizCount = d.quizCount || 0;
+      S.quizDate  = d.quizDate  || '';
       S.knowledge = d.knowledge
         ? JSON.parse(d.knowledge).map(k => ({
             id:               k.id || crypto.randomUUID(),

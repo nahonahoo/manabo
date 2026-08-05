@@ -65,6 +65,10 @@ html,body{height:100%;background:var(--cream);overflow:hidden;
 .travel-clack-pop{animation:clack-pop .7s ease-out}
 @keyframes clack-pop{0%{opacity:0;transform:translateY(6px) scale(.8)}30%{opacity:1;transform:translateY(0) scale(1.05)}70%{opacity:1}100%{opacity:0;transform:translateY(-10px) scale(1)}}
 
+/* ── ？クイズバッジ ── */
+#quiz-badge{animation:quizPulse 1.4s ease-in-out infinite}
+@keyframes quizPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+
 /* ── SPEECH ── */
 .speech-wrap{padding:0 13px 7px;background:var(--white)}
 .bubble{background:var(--pu-light);border-radius:16px 16px 16px 4px;padding:9px 13px;

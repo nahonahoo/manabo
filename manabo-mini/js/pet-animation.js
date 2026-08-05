@@ -255,6 +255,142 @@ D: 複数の知識を意外な形で結びつける
     showToast(IDLE[Math.floor(Math.random() * IDLE.length)]);
   }
 }
+
+// ── ？クイズ（せいかいすると¥50もらえる一問一答） ──
+// 独り言ループと同じペース（3〜10分に1回）で？マークが出現し、タップするとクイズが出る。
+// 出題範囲は「小学2年生の1学期（夏休み前）まで」に固定し、まだ習っていない範囲は出さない。
+let pendingQuiz = null; // { question, answer, acceptableAnswers }
+let quizFetchInFlight = false;
+
+function startQuizLoop() {
+  const today = new Date().toDateString();
+  if (S.quizDate !== today) { S.quizCount = 0; S.quizDate = today; }
+  scheduleNextQuiz();
+}
+
+function scheduleNextQuiz() {
+  const delay = (3 + Math.random() * 7) * 60 * 1000; // 3〜10分
+  setTimeout(async () => {
+    await maybePrepareQuiz();
+    scheduleNextQuiz();
+  }, delay);
+}
+
+async function maybePrepareQuiz() {
+  const today = new Date().toDateString();
+  if (S.quizDate !== today) { S.quizCount = 0; S.quizDate = today; }
+  if (S.quizCount >= 20) return;
+  if (pendingQuiz || quizFetchInFlight) return; // 前のクイズにこたえるまで次は用意しない
+
+  quizFetchInFlight = true;
+  const sys = `ペット「${S.petName}」として、いっしょにあそんでいる子に一問一答クイズを1問だす。${S.persona ? `【性格メモ：${S.persona}】` : ''}
+【キャラ】生意気で鋭くて好奇心おうせい。アホで破天荒な面もある愉快なキャラ。
+【語尾】${gobiStr()} をランダムに。敬語禁止。
+【出題範囲】小学2年生の1学期（夏休み前）までに学校でならう内容から出題する。ひらがな・カタカナ・かんたんな漢字（1年生でならう漢字が中心）・10〜20くらいまでのたしざんひきざん・みぢかな生きものや季節の話など。2年生の2学期以降の内容（九九など）や、むずかしい漢字・熟語は絶対に出さない。
+【問題の性質】すごくかんたんで、みじかい言葉や数字ひとつで答えられる問題にする。
+【トーン】やさしく・たのしく。まちがえてもぜんぜん責めない前提で出題する。
+JSON形式のみで返す（コードブロック不要）：
+{"question":"（だよ語尾で聞く問題文。ひらがな中心・20字以内）","answer":"（模範解答。できるだけみじかく）","acceptableAnswers":["表記ゆれを含む正解バリエーションを2〜4個（ひらがな/カタカナ/漢字の表記ゆれも含める）"]}`;
+
+  try {
+    const raw = await callGemini(sys, [{ role: 'user', parts: [{ text: '一問一答クイズを1問お願い。' }] }]);
+    const p = parseJSON(raw);
+    if (p && p.question && p.answer) {
+      pendingQuiz = {
+        question: p.question,
+        answer: p.answer,
+        acceptableAnswers: Array.isArray(p.acceptableAnswers) && p.acceptableAnswers.length ? p.acceptableAnswers : [p.answer],
+      };
+      const badge = document.getElementById('quiz-badge');
+      if (badge) badge.style.display = 'flex';
+    }
+  } catch (e) {
+    console.warn('quiz generate error', e);
+  }
+  quizFetchInFlight = false;
+}
+
+function normalizeQuizAnswer(s) {
+  return String(s || '')
+    .trim()
+    .replace(/[\s　]+/g, '')
+    .replace(/[。、！？．，.,!?]/g, '')
+    .toLowerCase();
+}
+
+function checkQuizAnswer(userInput, acceptableAnswers) {
+  const norm = normalizeQuizAnswer(userInput);
+  if (!norm) return false;
+  return (acceptableAnswers || []).some(a => {
+    const na = normalizeQuizAnswer(a);
+    if (!na) return false;
+    if (norm === na) return true;
+    if (na.length >= 2 && norm.length >= 2) return norm.includes(na) || na.includes(norm);
+    return false;
+  });
+}
+
+function openQuizModal() {
+  if (!pendingQuiz) return;
+  document.getElementById('quiz-question-text').textContent = pendingQuiz.question;
+  const input = document.getElementById('quiz-answer-input');
+  input.value = '';
+  input.style.display = '';
+  document.getElementById('quiz-btn-row').style.display = '';
+  document.getElementById('quiz-result-area').style.display = 'none';
+  document.getElementById('quiz-modal').style.display = 'flex';
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeQuizModal() {
+  document.getElementById('quiz-modal').style.display = 'none';
+  // 閉じても pendingQuiz は消さない（こたえないままとじても？マークはのこる）
+}
+
+// この問題はパス：ペナルティなしでこの問題だけ手放す。次の出現タイミングで新しい問題にかわる
+function passQuiz() {
+  pendingQuiz = null;
+  const badge = document.getElementById('quiz-badge');
+  if (badge) badge.style.display = 'none';
+  closeQuizModal();
+}
+
+async function submitQuizAnswer() {
+  if (!pendingQuiz) return;
+  const input = document.getElementById('quiz-answer-input');
+  const userAnswer = input.value.trim();
+  if (!userAnswer) return;
+  const quiz = pendingQuiz;
+  const correct = checkQuizAnswer(userAnswer, quiz.acceptableAnswers);
+
+  input.style.display = 'none';
+  document.getElementById('quiz-btn-row').style.display = 'none';
+  const resultArea = document.getElementById('quiz-result-area');
+  resultArea.style.display = '';
+
+  const badge = document.getElementById('quiz-badge');
+  if (badge) badge.style.display = 'none';
+  pendingQuiz = null;
+
+  if (correct) {
+    S.coins += 50;
+    S.quizCount++;
+    await saveShared({ coins: S.coins });
+    await saveState();
+    gainXP(1);
+    resultArea.innerHTML = `<div style="color:#2a7a50;font-weight:700">✨ せいかい！+¥50 ゲットしたよ！</div>`;
+    showToast('✨ クイズせいかい！+¥50');
+    typeText('わあ！せいかい！+¥50もらったよ！');
+    doExcited();
+  } else {
+    S.quizCount++;
+    await saveState();
+    resultArea.innerHTML = `<div style="color:#c08040">おしい…！こたえは「${esc(quiz.answer)}」だったよ。またチャレンジしてね！</div>`;
+    typeText(`おしい！こたえは「${quiz.answer}」だったよ〜`);
+    bounce();
+  }
+}
+
 // ── 教えたとき花火アニメ（まなぼみに専用） ──
 function showFireworks() {
   const colors = ['#ffb870','#ff9ec8','#b388ff','#80deea','#ffe066','#f48fb1'];

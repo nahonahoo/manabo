@@ -40,6 +40,7 @@ function showMain() {
   renderKnowledge();
   applyAppearance();
   startMonoLoop();
+  startQuizLoop();
   petSleep(); // 起動時は寝てる
 }
 
