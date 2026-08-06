@@ -257,7 +257,7 @@ D: 複数の知識を意外な形で結びつける
 }
 
 // ── ？クイズ（せいかいすると¥50もらえる一問一答） ──
-// 1〜3分に1回？マークが出現し、タップするとクイズが出る。
+// アプリを立ち上げたらすぐ？マークが用意され、そのあとは1〜3分に1回のペースで次が出現する。
 // 出題範囲は「小学2年生の1学期（夏休み前）まで」に固定し、まだ習っていない範囲は出さない。
 let pendingQuiz = null; // { question, answer, acceptableAnswers }
 let quizFetchInFlight = false;
@@ -265,6 +265,7 @@ let quizFetchInFlight = false;
 function startQuizLoop() {
   const today = new Date().toDateString();
   if (S.quizDate !== today) { S.quizCount = 0; S.quizDate = today; }
+  maybePrepareQuiz(); // たちあげてすぐ？マークが出るように、またずに1問用意する
   scheduleNextQuiz();
 }
 

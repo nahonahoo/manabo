@@ -336,6 +336,7 @@ async function generateOmiyage(partnerName) {
   if (!recentChat.trim()) return;
 
   const sys = `会話ログから「ふたつのペットが一緒に話して生まれた気づき・発見・面白い視点」を1〜3個抽出してください。
+【重要】topic・insightともに、漢字は小学2年生までに習うものだけ使い、それ以外はひらがなで書く（小学2年生の子どもが読む前提）。
 JSON形式のみ:
 [{"topic":"（発見の短いタイトル）","insight":"（どんなひらめきか1文、子どもでも分かる言葉で）","from":"${partnerName}"}]
 何もなければ空配列 [] を返す。`;
@@ -380,6 +381,7 @@ async function generateOmiyageFromLetter(letters) {
   if (!letters || letters.length === 0) return;
   const latestLetters = letters.slice(-3).map(l => `${l.from}：${l.text}`).join('\n');
   const sys = `お手紙の内容から「気づき・発見・ひらめき」を0〜2個抽出してください。
+【重要】topic・insightともに、漢字は小学2年生までに習うものだけ使い、それ以外はひらがなで書く（小学2年生の子どもが読む前提）。
 JSON形式のみ:
 [{"topic":"（気づきの短いタイトル）","insight":"（どんな気づきか1文、ひらがなメイン）","from":"手紙"}]
 何もなければ空配列 [] を返す。`;
